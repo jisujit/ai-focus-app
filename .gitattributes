@@ -1,0 +1,13 @@
+#SG added to fix LF-->CRLF warning messages
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Explicitly set text files to use LF (recommended for cross-platform projects)
+*.ts     text eol=lf
+*.json   text eol=lf
+*.js     text eol=lf
+*.css    text eol=lf
+*.md     text eol=lf
+*.html   text eol=lf
+
+# You can add other file types as needed
