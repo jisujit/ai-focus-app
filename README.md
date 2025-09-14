@@ -1,22 +1,16 @@
-# Welcome to your Lovable project
+# AI Focus App
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/e29d5460-6749-4405-9e33-ffac6000667a
+This is a modern web application built with React, TypeScript, and Vite. The project provides a platform for AI-focused training and services.
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/e29d5460-6749-4405-9e33-ffac6000667a) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -62,12 +56,30 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/e29d5460-6749-4405-9e33-ffac6000667a) and click on Share -> Publish.
+This project can be deployed to various hosting platforms such as:
 
-## Can I connect a custom domain to my Lovable project?
+- Vercel
+- Netlify
+- GitHub Pages
+- AWS S3 + CloudFront
+- Any static hosting service
 
-Yes, you can!
+### Deploy to Vercel (Recommended)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+1. Install Vercel CLI: `npm i -g vercel`
+2. Run `vercel` in the project directory
+3. Follow the prompts to deploy
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Deploy to Netlify
+
+1. Build the project: `npm run build`
+2. Upload the `dist` folder to Netlify
+3. Configure your domain in Netlify dashboard
+
+## Custom Domain Setup
+
+You can connect a custom domain by:
+
+1. Purchasing a domain from a domain registrar
+2. Configuring DNS settings to point to your hosting provider
+3. Setting up SSL certificates (usually handled automatically by modern hosting providers)
