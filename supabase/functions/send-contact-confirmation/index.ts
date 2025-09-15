@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const emailResponse = await resend.emails.send({
       //from: "AI Training Hub <onboarding@resend.dev>",
-      from: "AI Focus <noreply@ai-focus.org>",
+      from: "AI Focus <noreply@mail.ai-focus.org>",
       to: [email],
       subject: "Thank you for contacting AI Training Hub!",
       html: `
