@@ -50,7 +50,7 @@ serve(async (req) => {
             <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Registration Confirmed!</h1>
           </div>
 
-          <h2 style="color: #333; margin-bottom: 20px;">Welcome to AI Training Hub, ${firstName}!</h2>
+          <h2 style="color: #333; margin-bottom: 20px;">Welcome to AI Focus, ${firstName}!</h2>
 
           <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
             Congratulations! Your registration for <strong>${trainingTitle}</strong> has been successfully confirmed.
@@ -98,10 +98,10 @@ serve(async (req) => {
           </div>
 
           <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; text-align: center; color: #999; font-size: 14px;">
-            <p>We're excited to have you join us!<br><strong>The AI Training Hub Team</strong></p>
+            <p>We're excited to have you join us!<br><strong>The AI Focus Team</strong></p>
             <p style="margin-top: 15px;">
-              📧 support@aitraininghub.com | 📞 (555) 123-4567<br>
-              🏢 123 Innovation Drive, Tech City, TC 12345
+              📧 support@ai-focus.org | 📞 (904) 413-1317<br>
+              🏢 Jacksonville, FL 32256
             </p>
             <p style="margin-top: 15px; font-size: 12px; color: #ccc;">
               If you have any questions about your registration, please don't hesitate to contact us.
