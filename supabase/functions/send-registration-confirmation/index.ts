@@ -40,7 +40,6 @@ serve(async (req) => {
     console.log("Sending registration confirmation email to:", email);
 
     const emailResponse = await resend.emails.send({
-      //from: "AI Training Hub <onboarding@resend.dev>",
       from: "AI Focus <noreply@mail.ai-focus.org>",
       to: [email],
       subject: `Registration Confirmed: ${trainingTitle}`,

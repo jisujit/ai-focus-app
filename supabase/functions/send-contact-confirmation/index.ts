@@ -34,14 +34,13 @@ serve(async (req) => {
       : "General inquiry";
 
     const emailResponse = await resend.emails.send({
-      //from: "AI Training Hub <onboarding@resend.dev>",
       from: "AI Focus <noreply@mail.ai-focus.org>",
       to: [email],
       subject: "Thank you for contacting AI Focus!",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">AI-Focus</h1>
+            <h1 style="color: white; margin: 0; font-size: 28px;">AI Focus</h1>
           </div>
 
           <h2 style="color: #333; margin-bottom: 20px;">Thank you for reaching out, ${name}!</h2>
