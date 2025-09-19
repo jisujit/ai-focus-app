@@ -73,7 +73,7 @@ serve(async (req) => {
           <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px; text-align: center; color: #999; font-size: 14px;">
             <p>Best regards,<br><strong>The AI Focus Team</strong></p>
             <p style="margin-top: 15px;">
-              📧 support@ai-focus.org | 📞 (904) 431-1317<br>
+              📧 support@ai-focus.org | 📞 (904) 413-1317<br>
               🏢 Jacksonville, FL 32256
             </p>
           </div>
