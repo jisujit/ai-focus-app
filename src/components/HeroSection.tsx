@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Brain, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Calendar, Brain, TrendingUp, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-image.jpg";
 
@@ -70,8 +70,8 @@ const HeroSection = () => {
               className="text-lg px-8 py-4"
               onClick={() => window.open('https://calendly.com/ai-focus-academy/demo', '_blank')}
             >
-              <Play className="w-5 h-5 mr-2" />
-              Watch Demo
+              <Calendar className="w-5 h-5 mr-2" />
+              Book a Call
             </Button>
           </div>
         </div>

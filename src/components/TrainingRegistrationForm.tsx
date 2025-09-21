@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,23 +7,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Calendar, Clock, Users, DollarSign, CheckCircle, Send } from "lucide-react";
+import { X, Calendar, Clock, Users, DollarSign, CheckCircle, Send, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PaymentForm from "./PaymentForm";
+import { PaymentFormData, PaymentResult } from "@/integrations/stripe/types";
+import { PricingService, Session, PricingInfo } from "@/services/pricingService";
 
 interface TrainingRegistrationFormProps {
   isOpen: boolean;
   onClose: () => void;
   trainingTitle: string;
+  serviceId?: string;
 }
 
 const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
   isOpen,
   onClose,
-  trainingTitle
+  trainingTitle,
+  serviceId
 }) => {
   const [selectedSession, setSelectedSession] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [pricingInfo, setPricingInfo] = useState<PricingInfo | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -36,20 +45,47 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
     expectations: ""
   });
 
-  const sessions = [
-    {
-      id: "102501",
-      date: "October 11, 2025",
-      time: "11:00 AM EST",
-      availability: "12 spots available"
-    },
-    {
-      id: "102502", 
-      date: "October 18, 2025",
-      time: "11:00 AM EST",
-      availability: "15 spots available"
+  useEffect(() => {
+    if (serviceId) {
+      fetchSessions();
     }
-  ];
+  }, [serviceId]);
+
+  const fetchSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await PricingService.getSessions(serviceId);
+      setSessions(data);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load available sessions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPricing = async (sessionId: string) => {
+    try {
+      const pricing = await PricingService.getSessionPricing(sessionId);
+      setPricingInfo(pricing);
+    } catch (error) {
+      console.error("Error fetching pricing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load pricing information",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSessionChange = (sessionId: string) => {
+    setSelectedSession(sessionId);
+    fetchPricing(sessionId);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,57 +108,42 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
+    // Show payment form instead of directly submitting
+    setShowPaymentForm(true);
+  };
 
-    try {
-      const { data, error } = await supabase.functions.invoke('submit-training-registration', {
-        body: {
-          sessionId: selectedSession,
-          trainingTitle,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          company: formData.company,
-          phone: formData.phone,
-          jobTitle: formData.jobTitle,
-          experienceLevel: formData.experience,
-          expectations: formData.expectations
-        }
+  const handlePaymentSuccess = (result: PaymentResult) => {
+    if (result.success) {
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        company: "",
+        phone: "",
+        jobTitle: "",
+        experience: "",
+        expectations: ""
       });
-
-      if (error) throw error;
-
-      if (data.success) {
-        toast({
-          title: "Registration Submitted!",
-          description: data.message,
-        });
-        onClose();
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          company: "",
-          phone: "",
-          jobTitle: "",
-          experience: "",
-          expectations: ""
-        });
-        setSelectedSession("");
-      } else {
-        throw new Error(data.error || "Failed to submit registration");
-      }
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast({
-        title: "Registration Failed",
-        description: error.message || "Failed to submit registration. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      setSelectedSession("");
+      setShowPaymentForm(false);
+      onClose();
     }
+  };
+
+  const getPaymentFormData = (): PaymentFormData => {
+    return {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      company: formData.company,
+      phone: formData.phone,
+      jobTitle: formData.jobTitle,
+      experienceLevel: formData.experience,
+      expectations: formData.expectations,
+      amount: 75, // $75 training fee
+      currency: 'usd'
+    };
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -198,26 +219,78 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
               {/* Session Selection */}
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Select Training Session *</Label>
-                <RadioGroup value={selectedSession} onValueChange={setSelectedSession}>
-                  {sessions.map((session) => (
-                    <div key={session.id} className="flex items-center space-x-3">
-                      <RadioGroupItem value={session.id} id={session.id} />
-                      <Label 
-                        htmlFor={session.id} 
-                        className="flex-1 cursor-pointer border rounded-lg p-4 hover:bg-accent/5 transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-medium">Session {session.id}</div>
-                            <div className="text-sm text-muted-foreground">{session.date} @ {session.time}</div>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading sessions...</p>
+                  </div>
+                ) : sessions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No sessions available for this training.</p>
+                  </div>
+                ) : (
+                  <RadioGroup value={selectedSession} onValueChange={handleSessionChange}>
+                    {sessions.map((session) => (
+                      <div key={session.id} className="flex items-center space-x-3">
+                        <RadioGroupItem value={session.session_id} id={session.session_id} />
+                        <Label 
+                          className="flex-1 cursor-pointer border rounded-lg p-4 hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-medium">Session {session.session_id}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {new Date(session.date).toLocaleDateString()} @ {session.time}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {PricingService.getAvailabilityText(session.current_registrations, session.max_capacity)}
+                              </Badge>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Users className="w-4 h-4 mr-1" />
+                                {session.current_registrations}/{session.max_capacity}
+                              </div>
+                            </div>
                           </div>
-                          <Badge variant="secondary" className="text-xs">{session.availability}</Badge>
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                )}
               </div>
+
+              {/* Pricing Information */}
+              {pricingInfo && (
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3">Pricing Information</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {PricingService.formatPrice(pricingInfo.final_price)}
+                      </div>
+                      {pricingInfo.discount_amount > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          <span className="line-through">{PricingService.formatPrice(pricingInfo.base_price)}</span>
+                          <span className="ml-2 text-green-600 font-semibold">
+                            Save {PricingService.formatPrice(pricingInfo.discount_amount)} ({pricingInfo.discount_type})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {pricingInfo.is_early_bird && (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        Early Bird Pricing
+                      </Badge>
+                    )}
+                  </div>
+                  {pricingInfo.days_until_session > 0 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {pricingInfo.days_until_session} days until session
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Personal Information */}
               <div className="space-y-4">
@@ -324,10 +397,10 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                   variant="professional" 
                   size="lg" 
                   className="flex-1"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !selectedSession || !pricingInfo}
                 >
-                  <Send className="w-5 h-5 mr-2" />
-                  {isSubmitting ? "Submitting..." : "Register for Training ($75)"}
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  {isSubmitting ? "Processing..." : `Register & Pay ${pricingInfo ? PricingService.formatPrice(pricingInfo.final_price) : '--'}`}
                 </Button>
                 <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                   Cancel
@@ -337,6 +410,16 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* Payment Form Modal */}
+      <PaymentForm
+        isOpen={showPaymentForm}
+        onClose={() => setShowPaymentForm(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        formData={getPaymentFormData()}
+        trainingTitle={trainingTitle}
+        sessionId={selectedSession}
+      />
     </Dialog>
   );
 };

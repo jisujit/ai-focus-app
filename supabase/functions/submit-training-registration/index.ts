@@ -17,6 +17,13 @@ interface TrainingRegistrationData {
   jobTitle?: string;
   experienceLevel?: string;
   expectations?: string;
+  // Payment fields
+  paymentIntentId?: string;
+  stripeCustomerId?: string;
+  paymentAmount?: number;
+  paymentCurrency?: string;
+  paymentMethodId?: string;
+  paymentReceiptUrl?: string;
 }
 
 serve(async (req) => {
@@ -51,8 +58,14 @@ serve(async (req) => {
         job_title: registrationData.jobTitle,
         experience_level: registrationData.experienceLevel,
         expectations: registrationData.expectations,
-        status: 'pending',
-        payment_status: 'pending'
+        status: registrationData.paymentIntentId ? 'confirmed' : 'pending',
+        payment_status: registrationData.paymentIntentId ? 'paid' : 'pending',
+        stripe_payment_intent_id: registrationData.paymentIntentId,
+        stripe_customer_id: registrationData.stripeCustomerId,
+        payment_amount: registrationData.paymentAmount,
+        payment_currency: registrationData.paymentCurrency,
+        payment_method_id: registrationData.paymentMethodId,
+        payment_receipt_url: registrationData.paymentReceiptUrl,
       })
       .select()
       .single();
