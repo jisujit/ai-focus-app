@@ -34,7 +34,9 @@ const Services = () => {
 
   const fetchServices = async () => {
     try {
+      console.log("Fetching services...");
       const data = await PricingService.getServices();
+      console.log("Services fetched:", data);
       setServices(data);
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -122,8 +124,22 @@ const Services = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading services...</p>
             </div>
+          ) : services.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📚</div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Services Available</h3>
+              <p className="text-muted-foreground mb-4">
+                There are currently no training services available.
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/admin'}
+                variant="outline"
+              >
+                Go to Admin Dashboard
+              </Button>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {services.map((service) => {
                 const IconComponent = getIconComponent(service.icon);
                 const serviceSessions = getServiceSessions(service.id);
@@ -131,43 +147,43 @@ const Services = () => {
                 
                 return (
                   <Card key={service.id} className={`relative overflow-hidden shadow-soft hover:shadow-strong transition-all duration-300 hover-lift ${service.available && hasAvailableSessions ? 'border-accent shadow-glow' : 'border-muted-foreground/20'}`}>
-                    <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4">
                       {service.available && hasAvailableSessions ? (
-                        <Badge className="bg-success text-success-foreground">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Available Now
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                    <Badge className="bg-success text-success-foreground">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Available Now
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-muted text-muted-foreground">
                           {service.available ? "No Sessions" : "Coming Soon"}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center shadow-soft">
+                    </Badge>
+                  )}
+                </div>
+                
+                <CardHeader className="pb-4">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center shadow-soft">
                           <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-xl text-foreground mb-1">{service.title}</CardTitle>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {service.duration}
                         </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-xl text-foreground mb-1">{service.title}</CardTitle>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {service.duration}
-                            </div>
-                            <Badge variant="secondary">{service.level}</Badge>
-                            <Badge variant="outline" className="text-xs">{service.format}</Badge>
-                          </div>
-                        </div>
+                        <Badge variant="secondary">{service.level}</Badge>
+                        <Badge variant="outline" className="text-xs">{service.format}</Badge>
                       </div>
-                      <CardDescription className="text-muted-foreground leading-relaxed">
-                        {service.description}
-                      </CardDescription>
-                    </CardHeader>
+                    </div>
+                  </div>
+                  <CardDescription className="text-muted-foreground leading-relaxed">
+                    {service.description}
+                  </CardDescription>
+                </CardHeader>
 
-                    <CardContent>
-                      <div className="space-y-4">
+                <CardContent>
+                  <div className="space-y-4">
                         {/* Pricing Information */}
                         <div className="bg-muted/30 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -230,62 +246,62 @@ const Services = () => {
                           </div>
                         )}
 
-                        {/* Session Outline for Available Training */}
+                    {/* Session Outline for Available Training */}
                         {service.available && service.session_outline && service.session_outline.length > 0 && (
-                          <div className="mb-6">
-                            <h4 className="font-semibold text-foreground mb-3">Session Outline:</h4>
-                            <ul className="space-y-2">
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-foreground mb-3">Session Outline:</h4>
+                        <ul className="space-y-2">
                               {service.session_outline.map((outline, outlineIndex) => (
-                                <li key={outlineIndex} className="flex items-start text-sm text-muted-foreground">
-                                  <Clock className="w-4 h-4 text-accent mr-2 flex-shrink-0 mt-0.5" />
-                                  {outline}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                            <li key={outlineIndex} className="flex items-start text-sm text-muted-foreground">
+                              <Clock className="w-4 h-4 text-accent mr-2 flex-shrink-0 mt-0.5" />
+                              {outline}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-3">
-                            {service.available ? "Key Learning Outcomes:" : "What You'll Learn:"}
-                          </h4>
-                          <ul className="space-y-2">
-                            {service.features.map((feature, featureIndex) => (
-                              <li key={featureIndex} className="flex items-start text-sm text-muted-foreground">
-                                <CheckCircle className="w-4 h-4 text-accent mr-2 flex-shrink-0 mt-0.5" />
-                                {feature}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="pt-4 border-t border-border/50">
-                          <div className="flex items-center justify-between">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-3">
+                        {service.available ? "Key Learning Outcomes:" : "What You'll Learn:"}
+                      </h4>
+                      <ul className="space-y-2">
+                        {service.features.map((feature, featureIndex) => (
+                          <li key={featureIndex} className="flex items-start text-sm text-muted-foreground">
+                            <CheckCircle className="w-4 h-4 text-accent mr-2 flex-shrink-0 mt-0.5" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-border/50">
+                      <div className="flex items-center justify-between">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
                               onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Pricing Inquiry - ' + service.title}
-                            >
+                        >
                               <DollarSign className="w-4 h-4 mr-1" />
                               Pricing Details
-                            </Button>
-                            <Button 
+                        </Button>
+                        <Button 
                               variant={service.available && hasAvailableSessions ? "professional" : "outline"} 
                               disabled={!service.available || !hasAvailableSessions}
                               onClick={() => handleRegisterClick(service)}
                             >
                               {service.available && hasAvailableSessions ? "Register Now" : 
                                service.available ? "No Sessions Available" : "Notify When Available"}
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </Button>
-                          </div>
-                        </div>
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
                 );
               })}
-            </div>
+          </div>
           )}
         </div>
       </section>
@@ -322,8 +338,8 @@ const Services = () => {
 
       {/* Registration Form Modal */}
       {selectedService && (
-        <TrainingRegistrationForm 
-          isOpen={showRegistrationForm}
+      <TrainingRegistrationForm 
+        isOpen={showRegistrationForm}
           onClose={() => {
             setShowRegistrationForm(false);
             setSelectedService(null);

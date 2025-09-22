@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TestDataService } from "@/services/testDataService";
+import { showTestTools } from "@/utils/environment";
+import AdminAuth from "@/components/AdminAuth";
 
 interface Service {
   id: string;
@@ -58,6 +61,8 @@ const Admin = () => {
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [testDataStatus, setTestDataStatus] = useState({ services: 0, sessions: 0, registrations: 0 });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
 
   const [serviceForm, setServiceForm] = useState({
@@ -85,9 +90,33 @@ const Admin = () => {
   });
 
   useEffect(() => {
+    // Check if already authenticated
+    const isAuth = sessionStorage.getItem("admin_authenticated") === "true";
+    setIsAuthenticated(isAuth);
+    
+    if (isAuth) {
+      fetchServices();
+      fetchSessions();
+      if (showTestTools) {
+        fetchTestDataStatus();
+      }
+    }
+  }, [showTestTools]);
+
+  const handleAuthenticated = () => {
+    setIsAuthenticated(true);
     fetchServices();
     fetchSessions();
-  }, []);
+    if (showTestTools) {
+      fetchTestDataStatus();
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_authenticated");
+    sessionStorage.removeItem("admin_email");
+    setIsAuthenticated(false);
+  };
 
   const fetchServices = async () => {
     try {
@@ -126,6 +155,125 @@ const Admin = () => {
       toast({
         title: "Error",
         description: "Failed to fetch sessions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchTestDataStatus = async () => {
+    try {
+      const status = await TestDataService.getTestDataStatus();
+      setTestDataStatus(status);
+    } catch (error) {
+      console.error("Error fetching test data status:", error);
+    }
+  };
+
+  const handleResetData = async () => {
+    if (!confirm("Are you sure you want to reset ALL data? This cannot be undone!")) return;
+    
+    try {
+      const result = await TestDataService.resetAllData();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+        fetchServices();
+        fetchSessions();
+        fetchTestDataStatus();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSeedData = async () => {
+    try {
+      const result = await TestDataService.seedTestData();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+        fetchServices();
+        fetchSessions();
+        fetchTestDataStatus();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClearRegistrations = async () => {
+    if (!confirm("Are you sure you want to clear all registrations?")) return;
+    
+    try {
+      const result = await TestDataService.clearAllRegistrations();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+        fetchSessions();
+        fetchTestDataStatus();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateTestUsers = async () => {
+    try {
+      const result = await TestDataService.createTestUsers();
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+        fetchSessions();
+        fetchTestDataStatus();
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -319,14 +467,97 @@ const Admin = () => {
     }
   };
 
+  // Show authentication if not logged in
+  if (!isAuthenticated) {
+    return <AdminAuth onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <Layout>
       <div className="min-h-screen bg-background py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage services, sessions, and pricing</p>
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+                <p className="text-muted-foreground">Manage services, sessions, and pricing</p>
+              </div>
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
+
+          {/* Test Tools Section - Only visible in development */}
+          {showTestTools && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-yellow-800 flex items-center">
+                  🧪 Test Tools
+                  <Badge variant="outline" className="ml-2 text-yellow-700 border-yellow-300">
+                    Development Only
+                  </Badge>
+                </h2>
+                <div className="text-sm text-yellow-700">
+                  Services: {testDataStatus.services} | Sessions: {testDataStatus.sessions} | Registrations: {testDataStatus.registrations}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Button 
+                  onClick={handleResetData} 
+                  variant="destructive" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Reset All Data
+                </Button>
+                
+                <Button 
+                  onClick={handleSeedData} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Reseed Test Data
+                </Button>
+                
+                <Button 
+                  onClick={handleClearRegistrations} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Clear Registrations
+                </Button>
+                
+                <Button 
+                  onClick={handleCreateTestUsers} 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Create Test Users
+                </Button>
+              </div>
+              
+              <div className="mt-4 text-xs text-yellow-600">
+                <strong>Reset All Data:</strong> Clears all registrations, contact submissions, and resets session counts<br/>
+                <strong>Reseed Test Data:</strong> Creates sample services and sessions for testing<br/>
+                <strong>Clear Registrations:</strong> Removes all registrations and resets session counts<br/>
+                <strong>Create Test Users:</strong> Adds sample registrations to test the system
+              </div>
+            </div>
+          )}
 
           <Tabs defaultValue="services" className="space-y-6">
             <TabsList>
