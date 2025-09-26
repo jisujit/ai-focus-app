@@ -1,49 +1,125 @@
-# Environment Variables Setup
+# Environment Management Guide
 
-## Required Environment Variables
+## Overview
+This project uses two environments: **Development** and **Production**
 
-Create a `.env` file in your project root with the following variables:
+## Environment Files
+- `.env` - Active environment (Vite reads this)
+- `.env.development` - Development credentials
+- `.env.production` - Production credentials
 
+## Quick Commands
+
+### Switch to Development
 ```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=your-supabase-url
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-
-# Stripe Configuration
-VITE_STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
-
-# Admin Configuration
-VITE_ADMIN_PASSWORD=your-secure-admin-password
-VITE_ADMIN_EMAIL=admin@ai-focus.org
-
-# Development Settings
-NODE_ENV=development
+./switch-to-dev.ps1
 ```
 
-## Security Notes
+### Switch to Production  
+```bash
+./switch-to-prod.ps1
+```
 
-### Development:
-- Default admin password: `admin123`
-- Admin email: `admin@ai-focus.org`
-- Test tools visible
+## Development Environment
 
-### Production:
-- Use strong admin password
-- Use production email
-- Test tools hidden
-- Admin authentication required
+### Local Development
+```bash
+# 1. Switch to dev environment
+./switch-to-dev.ps1
 
-## Admin Access
+# 2. Set Supabase Edge Functions
+# Go to ai-focus-app-dev → Settings → Edge Functions
+# Add: TEST_MODE = true
 
-1. **Go to** `/admin` in your browser
-2. **Enter** the admin password
-3. **Access** the admin dashboard
-4. **Logout** when done
+# 3. Run locally
+npm run dev
+```
 
-## Security Features
+### Docker Testing (Dev Database)
+```bash
+# 1. Switch to dev environment
+./switch-to-dev.ps1
 
-- ✅ **Password protection** for admin access
-- ✅ **Session-based authentication**
-- ✅ **Environment-specific passwords**
-- ✅ **Test tools hidden in production**
-- ✅ **Logout functionality**
+# 2. Build and test with Docker
+npm run build:dev
+./dev-test.ps1
+```
+
+## Production Environment
+
+### Production Deployment
+```bash
+# 1. Switch to production environment
+./switch-to-prod.ps1
+
+# 2. Set Supabase Edge Functions
+# Go to ai-focus-app-prod → Settings → Edge Functions  
+# Add: TEST_MODE = false (or remove it)
+
+# 3. Deploy to production
+./deploy.ps1
+```
+
+## Environment Variables
+
+### Development (.env.development)
+```
+VITE_SUPABASE_URL=https://your-dev-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-dev-anon-key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_STRIPE_SECRET_KEY=sk_test_...
+```
+
+### Production (.env.production)
+```
+VITE_SUPABASE_URL=https://your-prod-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-prod-anon-key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
+VITE_STRIPE_SECRET_KEY=sk_live_...
+```
+
+## Supabase Edge Functions
+
+### Development (ai-focus-app-dev)
+- `TEST_MODE` = `true`
+- `RESEND_API_KEY` = your-resend-key
+- `STRIPE_SECRET_KEY` = sk_test_...
+
+### Production (ai-focus-app-prod)
+- `TEST_MODE` = `false` (or not set)
+- `RESEND_API_KEY` = your-resend-key  
+- `STRIPE_SECRET_KEY` = sk_live_...
+
+## Email Behavior
+
+### Development
+- All emails → `gsujit@gmail.com`
+- Database saves original email addresses
+- Logs show "(test mode)"
+
+### Production
+- Emails → Original recipient addresses
+- Normal production behavior
+
+## Workflow Summary
+
+### Daily Development
+1. `./switch-to-dev.ps1`
+2. `npm run dev`
+3. Test with dev database
+
+### Testing with Docker
+1. `./switch-to-dev.ps1`
+2. `./dev-test.ps1`
+3. Test at http://localhost:3001
+
+### Production Deployment
+1. `./switch-to-prod.ps1`
+2. `./deploy.ps1`
+3. Monitor production
+
+## Safety Notes
+- Always backup `.env` before switching
+- Test thoroughly in dev before production
+- Verify Stripe keys match environment
+- Check Supabase project URLs

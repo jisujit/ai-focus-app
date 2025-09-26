@@ -141,7 +141,7 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
       jobTitle: formData.jobTitle,
       experienceLevel: formData.experience,
       expectations: formData.expectations,
-      amount: 75, // $75 training fee
+      amount: pricingInfo ? pricingInfo.final_price : 0,
       currency: 'usd'
     };
   };
@@ -184,18 +184,34 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-4 h-4 text-success" />
                     <div>
-                      <div className="text-sm text-muted-foreground line-through">$150 per person</div>
-                      <div className="font-semibold text-success">$75 per person</div>
-                      <div className="text-xs text-muted-foreground">Introductory Price</div>
+                      {pricingInfo ? (
+                        <>
+                          {pricingInfo.discount_amount > 0 && (
+                            <div className="text-sm text-muted-foreground line-through">
+                              {PricingService.formatPrice(pricingInfo.base_price)} per person
+                            </div>
+                          )}
+                          <div className="font-semibold text-success">
+                            {PricingService.formatPrice(pricingInfo.final_price)} per person
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {pricingInfo.is_early_bird ? "Early Bird Price" : "Regular Price"}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">Select a session to see pricing</div>
+                      )}
                     </div>
                   </div>
                 </div>
-                <div className="pt-2">
-                  <Badge className="bg-success/10 text-success">
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    50% Off Launch Price
-                  </Badge>
-                </div>
+                {pricingInfo && pricingInfo.discount_amount > 0 && (
+                  <div className="pt-2">
+                    <Badge className="bg-success/10 text-success">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      {pricingInfo.is_early_bird ? "Early Bird Discount" : "Special Pricing"}
+                    </Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

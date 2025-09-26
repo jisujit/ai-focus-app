@@ -69,9 +69,8 @@ serve(async (req) => {
           <div style="background: #e7f3ff; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0;">
             <h4 style="color: #007bff; margin-top: 0;">What's Next?</h4>
             <ul style="color: #666; margin: 0; padding-left: 20px;">
-              <li>You will receive detailed training materials 48 hours before the session</li>
-              <li>A calendar invite with session details will be sent separately</li>
-              <li>Pre-training preparation materials will be available in your dashboard</li>
+              <li>Session details and preparation materials will be sent 48 hours before the session</li>
+              <li>For online sessions, a calendar invite with meeting details will be sent separately</li>
               <li>Our support team will contact you if any additional information is needed</li>
             </ul>
           </div>
@@ -79,20 +78,20 @@ serve(async (req) => {
           <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
             <h4 style="color: #856404; margin-top: 0;">Important Reminders:</h4>
             <ul style="color: #666; margin: 0; padding-left: 20px;">
-              <li>Please ensure you have a stable internet connection for online sessions</li>
-              <li>Check your system requirements in the preparation materials</li>
-              <li>Contact us at least 24 hours in advance if you need to reschedule</li>
+              <li>For online sessions: Please ensure you have a stable internet connection</li>
+              <li>Check your system requirements in the preparation materials when received</li>
+              <li>All sales are final. No cancellations or refunds are available</li>
             </ul>
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://fvazftacytreklsmmbcr.supabase.co"
+            <a href="mailto:support@ai-focus.org"
                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; margin: 5px;">
-              Access Dashboard
-            </a>
-            <a href="https://fvazftacytreklsmmbcr.supabase.co/contact"
-               style="background: transparent; color: #667eea; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; border: 2px solid #667eea; margin: 5px;">
               Contact Support
+            </a>
+            <a href="https://ai-focus.org"
+               style="background: transparent; color: #667eea; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; border: 2px solid #667eea; margin: 5px;">
+              Visit Website
             </a>
           </div>
 

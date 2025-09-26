@@ -53,7 +53,7 @@ export class TestDataService {
             description: "Get hands-on experience with AI tools in this comprehensive 3-hour instructor-led training session.",
             duration: "3 hours",
             level: "All Levels",
-            format: "Instructor-Led Training",
+            format: "Instructor-led In-person",
             base_price: 150.00,
             early_bird_price: 75.00,
             early_bird_days: 7,

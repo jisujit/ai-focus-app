@@ -116,13 +116,16 @@ serve(async (req) => {
 
     console.log("Registration completed successfully:", data.id);
 
-    // Send confirmation email
+    // Send confirmation email (redirect to gsujit@gmail.com in test mode)
+    const isTestMode = Deno.env.get("TEST_MODE") === "true";
+    const targetEmail = isTestMode ? "gsujit@gmail.com" : registrationData.email;
+    
     try {
       const emailResponse = await supabaseClient.functions.invoke('send-registration-confirmation', {
         body: {
           firstName: registrationData.firstName,
           lastName: registrationData.lastName,
-          email: registrationData.email,
+          email: targetEmail,
           trainingTitle: registrationData.trainingTitle,
           company: registrationData.company,
           phone: registrationData.phone,
@@ -135,7 +138,7 @@ serve(async (req) => {
       if (emailResponse.error) {
         console.error("Failed to send confirmation email:", emailResponse.error);
       } else {
-        console.log("Confirmation email sent successfully");
+        console.log(`Registration confirmation email sent successfully to ${targetEmail}${isTestMode ? ' (test mode)' : ''}`);
       }
     } catch (emailError) {
       console.error("Error sending confirmation email:", emailError);

@@ -57,12 +57,15 @@ serve(async (req) => {
 
     console.log("Contact submission saved successfully:", data);
 
-    // Send confirmation email
+    // Send confirmation email (redirect to gsujit@gmail.com in test mode)
+    const isTestMode = Deno.env.get("TEST_MODE") === "true";
+    const targetEmail = isTestMode ? "gsujit@gmail.com" : contactData.email;
+    
     try {
       const emailResponse = await supabaseClient.functions.invoke('send-contact-confirmation', {
         body: {
           name: `${contactData.firstName} ${contactData.lastName}`,
-          email: contactData.email,
+          email: targetEmail,
           company: contactData.company,
           message: contactData.message,
           selectedInterests: contactData.trainingInterests || []
@@ -72,7 +75,7 @@ serve(async (req) => {
       if (emailResponse.error) {
         console.error("Failed to send confirmation email:", emailResponse.error);
       } else {
-        console.log("Confirmation email sent successfully");
+        console.log(`Confirmation email sent successfully to ${targetEmail}${isTestMode ? ' (test mode)' : ''}`);
       }
     } catch (emailError) {
       console.error("Error sending confirmation email:", emailError);

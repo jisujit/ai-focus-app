@@ -744,21 +744,35 @@ const Admin = () => {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="level">Level</Label>
-                <Input
+                <select
                   id="level"
                   value={serviceForm.level}
                   onChange={(e) => setServiceForm({...serviceForm, level: e.target.value})}
+                  className="w-full p-2 border rounded-md"
                   required
-                />
+                >
+                  <option value="">Select Level</option>
+                  <option value="All Levels">All Levels</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="Expert">Expert</option>
+                </select>
               </div>
               <div>
                 <Label htmlFor="format">Format</Label>
-                <Input
+                <select
                   id="format"
                   value={serviceForm.format}
                   onChange={(e) => setServiceForm({...serviceForm, format: e.target.value})}
+                  className="w-full p-2 border rounded-md"
                   required
-                />
+                >
+                  <option value="">Select Format</option>
+                  <option value="Instructor-led In-person">Instructor-led In-person</option>
+                  <option value="Instructor-led Online">Instructor-led Online</option>
+                  <option value="Self-paced">Self-paced</option>
+                </select>
               </div>
               <div>
                 <Label htmlFor="icon">Icon (Lucide name)</Label>
@@ -806,23 +820,23 @@ const Admin = () => {
             </div>
 
             <div>
-              <Label htmlFor="features">Features (one per line)</Label>
-              <Textarea
-                id="features"
-                value={serviceForm.features}
-                onChange={(e) => setServiceForm({...serviceForm, features: e.target.value})}
-                rows={4}
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="session_outline">Session Outline (one per line)</Label>
               <Textarea
                 id="session_outline"
                 value={serviceForm.session_outline}
                 onChange={(e) => setServiceForm({...serviceForm, session_outline: e.target.value})}
                 rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="features">Key Learning Outcomes (one per line)</Label>
+              <Textarea
+                id="features"
+                value={serviceForm.features}
+                onChange={(e) => setServiceForm({...serviceForm, features: e.target.value})}
+                rows={4}
+                required
               />
             </div>
 
