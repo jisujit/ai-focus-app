@@ -86,7 +86,19 @@ const Admin = () => {
     date: "",
     time: "",
     max_capacity: 20,
-    status: "active"
+    status: "active",
+    location_name: "",
+    location_address: "",
+    location_city: "",
+    location_state: "",
+    location_zip: "",
+    location_phone: "",
+    location_notes: "",
+    is_virtual: false,
+    virtual_link: "",
+    location_confirmed_by: "",
+    parking_info: "",
+    driving_directions: ""
   });
 
   useEffect(() => {
@@ -120,14 +132,17 @@ const Admin = () => {
 
   const fetchServices = async () => {
     try {
+      console.log("Admin: Fetching services...");
       const { data, error } = await supabase
         .from("services")
         .select("*")
         .order("created_at", { ascending: false });
 
+      console.log("Admin: Services query result:", { data, error });
       if (error) throw error;
       setServices(data || []);
     } catch (error: any) {
+      console.error("Admin: Error fetching services:", error);
       toast({
         title: "Error",
         description: "Failed to fetch services",
@@ -138,6 +153,7 @@ const Admin = () => {
 
   const fetchSessions = async () => {
     try {
+      console.log("Admin: Fetching sessions...");
       const { data, error } = await supabase
         .from("sessions")
         .select(`
@@ -146,12 +162,14 @@ const Admin = () => {
         `)
         .order("date", { ascending: true });
 
+      console.log("Admin: Sessions query result:", { data, error });
       if (error) throw error;
       setSessions(data?.map(s => ({
         ...s,
         service_title: s.services?.title
       })) || []);
     } catch (error: any) {
+      console.error("Admin: Error fetching sessions:", error);
       toast({
         title: "Error",
         description: "Failed to fetch sessions",
@@ -200,16 +218,35 @@ const Admin = () => {
 
   const handleSeedData = async () => {
     try {
+      console.log("Admin: Starting to seed test data...");
+      
+      // First, test database connection
+      console.log("Admin: Testing database connection...");
+      const { data: testData, error: testError } = await supabase
+        .from("services")
+        .select("count")
+        .limit(1);
+      
+      console.log("Admin: Database connection test:", { testData, testError });
+      
+      if (testError) {
+        throw new Error(`Database connection failed: ${testError.message}`);
+      }
+      
       const result = await TestDataService.seedTestData();
+      console.log("Admin: Seed data result:", result);
+      
       if (result.success) {
         toast({
           title: "Success",
           description: result.message,
         });
+        console.log("Admin: Refreshing data after successful seed...");
         fetchServices();
         fetchSessions();
         fetchTestDataStatus();
       } else {
+        console.error("Admin: Seed data failed:", result.message);
         toast({
           title: "Error",
           description: result.message,
@@ -217,6 +254,7 @@ const Admin = () => {
         });
       }
     } catch (error: any) {
+      console.error("Admin: Seed data error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -330,27 +368,71 @@ const Admin = () => {
     e.preventDefault();
     
     try {
+      console.log("Admin: Submitting session form:", sessionForm);
+      
+      // Validate required date field
+      if (!sessionForm.date) {
+        throw new Error("Date is required");
+      }
+      
+      console.log("Admin: Date debugging:");
+      console.log("- Form date input:", sessionForm.date);
+      console.log("- Date object:", new Date(sessionForm.date));
+      console.log("- ISO string:", new Date(sessionForm.date).toISOString());
+      console.log("- Local date string:", new Date(sessionForm.date).toLocaleDateString());
+      
+      // Fix timezone issue by creating date at noon UTC to avoid day shift
+      const dateObj = new Date(sessionForm.date);
+      dateObj.setUTCHours(12, 0, 0, 0); // Set to noon UTC to avoid timezone issues
+      
       const sessionData = {
         ...sessionForm,
-        date: new Date(sessionForm.date).toISOString()
+        date: dateObj.toISOString()
       };
+      console.log("Admin: Processed session data:", sessionData);
 
       if (editingSession) {
+        console.log("Admin: Updating session with ID:", editingSession.id);
+        
+        // Remove computed fields that don't exist in the database
+        const { service_title, ...updateData } = sessionData;
+        
+        // Handle empty date fields - convert empty strings to null
+        if (updateData.location_confirmed_by === "") {
+          updateData.location_confirmed_by = null;
+        }
+        
+        console.log("Admin: Filtered update data:", updateData);
+        
         const { error } = await supabase
           .from("sessions")
-          .update(sessionData)
+          .update(updateData)
           .eq("id", editingSession.id);
 
+        console.log("Admin: Session update result:", { error });
         if (error) throw error;
         toast({
           title: "Success",
           description: "Session updated successfully",
         });
       } else {
+        console.log("Admin: Creating new session");
+        
+        // Remove computed fields that don't exist in the database
+        const { service_title, ...insertData } = sessionData;
+        
+        // Handle empty date fields - convert empty strings to null
+        if (insertData.location_confirmed_by === "") {
+          insertData.location_confirmed_by = null;
+        }
+        
+        console.log("Admin: Filtered insert data:", insertData);
+        
         const { error } = await supabase
           .from("sessions")
-          .insert([sessionData]);
+          .insert([insertData]);
 
+        console.log("Admin: Session create result:", { error });
         if (error) throw error;
         toast({
           title: "Success",
@@ -363,6 +445,7 @@ const Admin = () => {
       resetSessionForm();
       fetchSessions();
     } catch (error: any) {
+      console.error("Admin: Session submit error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -395,7 +478,19 @@ const Admin = () => {
       date: "",
       time: "",
       max_capacity: 20,
-      status: "active"
+      status: "active",
+      location_name: "",
+      location_address: "",
+      location_city: "",
+      location_state: "",
+      location_zip: "",
+      location_phone: "",
+      location_notes: "",
+      is_virtual: false,
+      virtual_link: "",
+      location_confirmed_by: "",
+      parking_info: "",
+      driving_directions: ""
     });
   };
 
@@ -411,12 +506,54 @@ const Admin = () => {
   };
 
   const editSession = (session: Session) => {
-    setEditingSession(session);
-    setSessionForm({
-      ...session,
-      date: new Date(session.date).toISOString().split('T')[0]
-    });
-    setShowSessionDialog(true);
+    console.log("Admin: Editing session:", session);
+    
+    try {
+      // Test if we can access the session data properly
+      console.log("Admin: Session date:", session.date);
+      console.log("Admin: Session ID:", session.id);
+      console.log("Admin: Session service_id:", session.service_id);
+      
+      setEditingSession(session);
+      
+      // Fix date display to avoid timezone issues
+      const sessionDate = new Date(session.date);
+      const displayDate = sessionDate.getFullYear() + '-' + 
+        String(sessionDate.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(sessionDate.getDate()).padStart(2, '0');
+      
+      const formData = {
+        service_id: session.service_id || "",
+        session_id: session.session_id || "",
+        date: displayDate,
+        time: session.time || "",
+        max_capacity: session.max_capacity || 20,
+        status: session.status || "active",
+        location_name: session.location_name || "",
+        location_address: session.location_address || "",
+        location_city: session.location_city || "",
+        location_state: session.location_state || "",
+        location_zip: session.location_zip || "",
+        location_phone: session.location_phone || "",
+        location_notes: session.location_notes || "",
+        is_virtual: session.is_virtual || false,
+        virtual_link: session.virtual_link || "",
+        location_confirmed_by: session.location_confirmed_by ? new Date(session.location_confirmed_by).toISOString().split('T')[0] : "",
+        parking_info: session.parking_info || "",
+        driving_directions: session.driving_directions || ""
+      };
+      
+      console.log("Admin: Form data prepared:", formData);
+      setSessionForm(formData);
+      setShowSessionDialog(true);
+    } catch (error) {
+      console.error("Admin: Error in editSession:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open session for editing",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteService = async (id: string) => {
@@ -850,7 +987,7 @@ const Admin = () => {
               <Label htmlFor="available">Available for registration</Label>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
               <Button type="button" variant="outline" onClick={() => setShowServiceDialog(false)}>
                 Cancel
               </Button>
@@ -865,7 +1002,7 @@ const Admin = () => {
 
       {/* Session Dialog */}
       <Dialog open={showSessionDialog} onOpenChange={setShowSessionDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingSession ? "Edit Session" : "Add New Session"}
@@ -950,7 +1087,146 @@ const Admin = () => {
               </select>
             </div>
 
-            <div className="flex justify-end gap-2">
+            {/* Location Section */}
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-4">Location Information</h3>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="is_virtual">Session Type</Label>
+                  <select
+                    id="is_virtual"
+                    value={sessionForm.is_virtual ? "true" : "false"}
+                    onChange={(e) => setSessionForm({...sessionForm, is_virtual: e.target.value === "true"})}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="false">In-Person</option>
+                    <option value="true">Virtual</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="location_confirmed_by">Location Confirmed By</Label>
+                  <Input
+                    id="location_confirmed_by"
+                    type="date"
+                    value={sessionForm.location_confirmed_by}
+                    onChange={(e) => setSessionForm({...sessionForm, location_confirmed_by: e.target.value})}
+                    placeholder="Leave empty if confirmed"
+                  />
+                </div>
+              </div>
+
+              {sessionForm.is_virtual ? (
+                <div>
+                  <Label htmlFor="virtual_link">Virtual Meeting Link</Label>
+                  <Input
+                    id="virtual_link"
+                    value={sessionForm.virtual_link}
+                    onChange={(e) => setSessionForm({...sessionForm, virtual_link: e.target.value})}
+                    placeholder="https://zoom.us/j/..."
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="location_name">Venue Name</Label>
+                      <Input
+                        id="location_name"
+                        value={sessionForm.location_name}
+                        onChange={(e) => setSessionForm({...sessionForm, location_name: e.target.value})}
+                        placeholder="Jacksonville Business Center"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location_phone">Venue Phone</Label>
+                      <Input
+                        id="location_phone"
+                        value={sessionForm.location_phone}
+                        onChange={(e) => setSessionForm({...sessionForm, location_phone: e.target.value})}
+                        placeholder="+1 (904) 123-4567"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <Label htmlFor="location_address">Address</Label>
+                    <Input
+                      id="location_address"
+                      value={sessionForm.location_address}
+                      onChange={(e) => setSessionForm({...sessionForm, location_address: e.target.value})}
+                      placeholder="123 Main Street"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="location_city">City</Label>
+                      <Input
+                        id="location_city"
+                        value={sessionForm.location_city}
+                        onChange={(e) => setSessionForm({...sessionForm, location_city: e.target.value})}
+                        placeholder="Jacksonville"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location_state">State</Label>
+                      <Input
+                        id="location_state"
+                        value={sessionForm.location_state}
+                        onChange={(e) => setSessionForm({...sessionForm, location_state: e.target.value})}
+                        placeholder="FL"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location_zip">ZIP Code</Label>
+                      <Input
+                        id="location_zip"
+                        value={sessionForm.location_zip}
+                        onChange={(e) => setSessionForm({...sessionForm, location_zip: e.target.value})}
+                        placeholder="32256"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="parking_info">Parking Information</Label>
+                      <Textarea
+                        id="parking_info"
+                        value={sessionForm.parking_info}
+                        onChange={(e) => setSessionForm({...sessionForm, parking_info: e.target.value})}
+                        placeholder="Free parking available in front of building"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="driving_directions">Driving Directions</Label>
+                      <Textarea
+                        id="driving_directions"
+                        value={sessionForm.driving_directions}
+                        onChange={(e) => setSessionForm({...sessionForm, driving_directions: e.target.value})}
+                        placeholder="Take I-95 to Exit 123..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <Label htmlFor="location_notes">Additional Location Notes</Label>
+                <Textarea
+                  id="location_notes"
+                  value={sessionForm.location_notes}
+                  onChange={(e) => setSessionForm({...sessionForm, location_notes: e.target.value})}
+                  placeholder="Enter through main lobby, take elevator to 3rd floor..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">
               <Button type="button" variant="outline" onClick={() => setShowSessionDialog(false)}>
                 Cancel
               </Button>

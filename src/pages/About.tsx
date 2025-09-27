@@ -137,7 +137,7 @@ const About = () => {
                 <Button 
                   variant="outline" 
                   className="flex items-center"
-                  onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Training Inquiry'}
+                  onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Training Inquiry'}
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Contact Sujit
@@ -196,7 +196,7 @@ const About = () => {
               <Button 
                 variant="professional" 
                 size="lg"
-                onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Enterprise Training Programs'}
+                onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Enterprise Training Programs'}
               >
                 Learn About Our Enterprise Programs
                 <ArrowRight className="w-5 h-5 ml-2" />

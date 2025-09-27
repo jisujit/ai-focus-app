@@ -35,6 +35,8 @@ export class TestDataService {
 
   static async seedTestData() {
     try {
+      console.log("TestDataService: Starting seed process...");
+      
       // First, ensure we have the base service
       const { data: existingService } = await supabase
         .from("services")
@@ -42,10 +44,12 @@ export class TestDataService {
         .eq("title", "AI Fundamentals & ChatGPT Mastery")
         .single();
 
+      console.log("TestDataService: Existing service check:", existingService);
       let serviceId = existingService?.id;
 
       // Create the service if it doesn't exist
       if (!serviceId) {
+        console.log("TestDataService: Creating new service...");
         const { data: newService, error: serviceError } = await supabase
           .from("services")
           .insert({
@@ -77,8 +81,11 @@ export class TestDataService {
           .select("id")
           .single();
 
+        console.log("TestDataService: Service creation result:", { newService, serviceError });
         if (serviceError) throw serviceError;
         serviceId = newService.id;
+      } else {
+        console.log("TestDataService: Using existing service ID:", serviceId);
       }
 
       // Create test sessions
@@ -113,17 +120,22 @@ export class TestDataService {
       ];
 
       // Clear existing test sessions
+      console.log("TestDataService: Clearing existing test sessions...");
       await supabase.from("sessions").delete().like("session_id", "TEST%");
 
       // Insert new test sessions
+      console.log("TestDataService: Inserting new test sessions...", testSessions);
       const { error: sessionsError } = await supabase
         .from("sessions")
         .insert(testSessions);
 
+      console.log("TestDataService: Sessions insert result:", { sessionsError });
       if (sessionsError) throw sessionsError;
 
+      console.log("TestDataService: Seed completed successfully");
       return { success: true, message: "Test data seeded successfully" };
     } catch (error: any) {
+      console.error("TestDataService: Seed error:", error);
       return { success: false, message: error.message };
     }
   }

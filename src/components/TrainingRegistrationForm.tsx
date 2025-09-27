@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Calendar, Clock, Users, DollarSign, CheckCircle, Send, CreditCard } from "lucide-react";
+import { X, Calendar, Clock, Users, DollarSign, CheckCircle, Send, CreditCard, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PaymentForm from "./PaymentForm";
@@ -28,6 +28,7 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
   serviceId
 }) => {
   const [selectedSession, setSelectedSession] = useState("");
+  const [selectedSessionUuid, setSelectedSessionUuid] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -54,13 +55,55 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
   const fetchSessions = async () => {
     try {
       setLoading(true);
+      console.log("TrainingRegistrationForm: Starting to fetch sessions...");
+      console.log("TrainingRegistrationForm: ServiceId:", serviceId);
+      
       const data = await PricingService.getSessions(serviceId);
+      console.log("TrainingRegistrationForm: Fetched sessions:", data);
+      console.log("TrainingRegistrationForm: Session IDs:", data.map(s => s.id));
+      
+      // Check if location fields are present
+      if (data.length > 0) {
+        console.log("TrainingRegistrationForm: All fetched sessions:");
+        data.forEach((session, index) => {
+          console.log(`Session ${index}:`, {
+            id: session.id,
+            session_id: session.session_id,
+            date: session.date,
+            location_name: session.location_name,
+            is_virtual: session.is_virtual
+          });
+        });
+        
+        console.log("TrainingRegistrationForm: First session location fields:", {
+          is_virtual: data[0].is_virtual,
+          location_name: data[0].location_name,
+          location_address: data[0].location_address,
+          location_city: data[0].location_city,
+          location_state: data[0].location_state,
+          location_phone: data[0].location_phone,
+          location_notes: data[0].location_notes,
+          virtual_link: data[0].virtual_link,
+          location_confirmed_by: data[0].location_confirmed_by,
+          parking_info: data[0].parking_info,
+          driving_directions: data[0].driving_directions
+        });
+      }
+      
       setSessions(data);
+      console.log("TrainingRegistrationForm: Sessions set successfully");
     } catch (error) {
-      console.error("Error fetching sessions:", error);
+      console.error("TrainingRegistrationForm: Error fetching sessions:", error);
+      console.error("TrainingRegistrationForm: Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
       toast({
         title: "Error",
-        description: "Failed to load available sessions",
+        description: `Failed to load sessions: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -83,8 +126,20 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
   };
 
   const handleSessionChange = (sessionId: string) => {
-    setSelectedSession(sessionId);
-    fetchPricing(sessionId);
+    console.log("TrainingRegistrationForm: Session changed to:", sessionId);
+    console.log("TrainingRegistrationForm: Available sessions:", sessions.map(s => ({ id: s.id, session_id: s.session_id, date: s.date })));
+    console.log("TrainingRegistrationForm: Looking for session with session_id:", sessionId);
+    const foundSession = sessions.find(s => s.session_id === sessionId);
+    console.log("TrainingRegistrationForm: Found session:", foundSession);
+    
+    // Store the UUID id for database operations, but keep session_id for display
+    const actualSessionId = foundSession ? foundSession.id : sessionId;
+    console.log("TrainingRegistrationForm: Using UUID for database:", actualSessionId);
+    
+    // Store both the session_id for RadioGroup display and UUID for database operations
+    setSelectedSession(sessionId); // Use session_id for RadioGroup matching
+    setSelectedSessionUuid(actualSessionId); // Store UUID separately for database operations
+    fetchPricing(sessionId); // Still use session_id for pricing lookup
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,6 +181,7 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
         expectations: ""
       });
       setSelectedSession("");
+      setSelectedSessionUuid("");
       setShowPaymentForm(false);
       onClose();
     }
@@ -215,6 +271,132 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
               </CardContent>
             </Card>
 
+            {/* Location Information */}
+    {selectedSession && (() => {
+      // selectedSession now contains the session_id, so find by session_id
+      const session = sessions.find(s => s.session_id === selectedSession);
+      console.log("Selected session:", session);
+      console.log("Location card should render for session:", selectedSession);
+      console.log("Available sessions:", sessions.map(s => ({ id: s.id, session_id: s.session_id, date: s.date })));
+      if (!session) {
+        console.log("No session found for session_id:", selectedSession);
+        console.log("This means the selectedSession ID doesn't match any session in the sessions array");
+        return null;
+      }
+              
+              console.log("Rendering location card for session:", session.id);
+              console.log("Session date:", session.date);
+              console.log("Session location fields:", {
+                location_name: session.location_name,
+                location_address: session.location_address,
+                is_virtual: session.is_virtual
+              });
+
+              return (
+                <Card className="border-blue-200 bg-blue-50/50">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center">
+                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                      Session Location
+                    </h4>
+                    
+                    {/* Debug info */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      Debug: is_virtual={String(session.is_virtual)}, has_location_name={String(!!session.location_name)}
+                    </div>
+                    
+                    {session.is_virtual ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2 text-sm">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="font-medium text-green-700">Virtual Session</span>
+                        </div>
+                        {session.virtual_link && (
+                          <div className="text-xs text-muted-foreground">
+                            Meeting link will be provided via email
+                          </div>
+                        )}
+                        {session.location_notes && (
+                          <div className="text-xs text-muted-foreground mt-2">
+                            <strong>Note:</strong> {session.location_notes}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {session.location_name && (
+                          <div className="text-sm font-medium text-foreground">
+                            {session.location_name}
+                          </div>
+                        )}
+                        
+                        {(session.location_address || session.location_city) && (
+                          <div className="text-xs text-muted-foreground">
+                            {session.location_address && (
+                              <div>{session.location_address}</div>
+                            )}
+                            {session.location_city && session.location_state && (
+                              <div>{session.location_city}, {session.location_state} {session.location_zip}</div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {session.location_phone && (
+                          <div className="text-xs text-muted-foreground">
+                            📞 {session.location_phone}
+                          </div>
+                        )}
+                        
+                        {session.parking_info && (
+                          <div className="text-xs text-muted-foreground mt-2">
+                            <strong>Parking:</strong> {session.parking_info}
+                          </div>
+                        )}
+                        
+                        {session.driving_directions && (
+                          <div className="text-xs text-muted-foreground mt-2">
+                            <strong>Directions:</strong> {session.driving_directions}
+                          </div>
+                        )}
+                        
+                        {session.location_confirmed_by && (
+                          <div className="text-xs text-orange-600 mt-2">
+                            ⏰ Location confirmed by {new Date(session.location_confirmed_by).toLocaleDateString()}
+                          </div>
+                        )}
+                        
+                        {session.location_notes && (
+                          <div className="text-xs text-muted-foreground mt-2">
+                            <strong>Note:</strong> {session.location_notes}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Fallback when no location info is available */}
+                    {!session.is_virtual && !session.location_name && !session.location_address && (
+                      <div className="text-xs text-muted-foreground">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span>Location details to be confirmed</span>
+                        </div>
+                        {session.location_confirmed_by && (
+                          <div className="mt-1 text-orange-600">
+                            ⏰ Location confirmed by {new Date(session.location_confirmed_by).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Always show this for testing */}
+                    <div className="text-xs text-blue-600 mt-2">
+                      ✅ Location card is working! Session ID: {session.id || 'unknown'}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             <Card className="border-accent/20">
               <CardContent className="p-4">
                 <h4 className="font-semibold text-sm text-foreground mb-2">What's Included:</h4>
@@ -256,7 +438,12 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                             <div>
                               <div className="font-medium">Session {session.session_id}</div>
                               <div className="text-sm text-muted-foreground">
-                                {new Date(session.date).toLocaleDateString()} @ {session.time}
+                                {(() => {
+                                  // Parse date string directly to avoid timezone issues
+                                  const dateStr = session.date.split('T')[0]; // Get just the date part
+                                  const [year, month, day] = dateStr.split('-');
+                                  return `${month}/${day}/${year}`;
+                                })()} @ {session.time}
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -377,7 +564,7 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Additional Information</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="experience">Current AI Experience Level</Label>
+                  <Label>Current AI Experience Level</Label>
                   <RadioGroup value={formData.experience} onValueChange={(value) => handleInputChange('experience', value)}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="beginner" id="beginner" />
@@ -434,7 +621,7 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
         onPaymentSuccess={handlePaymentSuccess}
         formData={getPaymentFormData()}
         trainingTitle={trainingTitle}
-        sessionId={selectedSession}
+        sessionId={selectedSessionUuid}
       />
     </Dialog>
   );

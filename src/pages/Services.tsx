@@ -79,7 +79,7 @@ const Services = () => {
       setSelectedService(service);
       setShowRegistrationForm(true);
     } else {
-      window.location.href = `mailto:sujit@ai-focus.org?subject=Training Registration - ${service.title}`;
+      window.location.href = `mailto:info@ai-focus.org?subject=Training Registration - ${service.title}`;
     }
   };
 
@@ -280,7 +280,7 @@ const Services = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                              onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Pricing Inquiry - ' + service.title}
+                              onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Pricing Inquiry - ' + service.title}
                         >
                               <DollarSign className="w-4 h-4 mr-1" />
                               Pricing Details
@@ -320,7 +320,20 @@ const Services = () => {
               variant="professional" 
               size="lg" 
               className="text-lg px-8 py-4"
-              onClick={() => setShowRegistrationForm(true)}
+              onClick={() => {
+                // Find the AI Fundamentals service and set it as selected
+                const aiFundamentalsService = services.find(service => 
+                  service.title.toLowerCase().includes('ai fundamentals') || 
+                  service.title.toLowerCase().includes('chatgpt mastery')
+                );
+                if (aiFundamentalsService) {
+                  setSelectedService(aiFundamentalsService);
+                  setShowRegistrationForm(true);
+                } else {
+                  // Fallback to email if service not found
+                  window.location.href = 'mailto:info@ai-focus.org?subject=AI Fundamentals Training Registration';
+                }
+              }}
             >
               Register for AI Fundamentals Training
             </Button>
@@ -328,7 +341,7 @@ const Services = () => {
               variant="outline" 
               size="lg" 
               className="text-lg px-8 py-4"
-              onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Training Updates Subscription'}
+              onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Training Updates Subscription'}
             >
               Get Training Updates
             </Button>

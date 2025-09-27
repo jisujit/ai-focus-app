@@ -26,6 +26,18 @@ export interface Session {
   current_registrations: number;
   status: string;
   service_title?: string;
+  location_name?: string;
+  location_address?: string;
+  location_city?: string;
+  location_state?: string;
+  location_zip?: string;
+  location_phone?: string;
+  location_notes?: string;
+  is_virtual?: boolean;
+  virtual_link?: string;
+  location_confirmed_by?: string;
+  parking_info?: string;
+  driving_directions?: string;
 }
 
 export interface PricingInfo {
@@ -50,27 +62,116 @@ export class PricingService {
   }
 
   static async getSessions(serviceId?: string): Promise<Session[]> {
-    let query = supabase
-      .from("sessions")
-      .select(`
-        *,
-        services!inner(title)
-      `)
-      .eq("status", "active")
-      .gte("date", new Date().toISOString())
-      .order("date", { ascending: true });
+    try {
+      console.log("PricingService: Fetching sessions for serviceId:", serviceId);
+      console.log("PricingService: Current timestamp:", new Date().toISOString());
+      
+      // First test if location fields exist in the database
+      console.log("PricingService: Testing if location fields exist...");
+      const { data: testData, error: testError } = await supabase
+        .from("sessions")
+        .select("id, location_name, is_virtual")
+        .limit(1);
+      
+      console.log("PricingService: Location fields test:", { testData, testError });
+      
+      // Check what sessions actually exist in the database
+      console.log("PricingService: Checking all sessions in database...");
+      const { data: allSessions, error: allSessionsError } = await supabase
+        .from("sessions")
+        .select("id, session_id, status, date")
+        .order("date", { ascending: true });
+      
+      console.log("PricingService: All sessions in database:", { allSessions, allSessionsError });
+      
+      // First try a simple query to test basic connectivity
+      console.log("PricingService: Testing basic sessions query...");
+      let query = supabase
+        .from("sessions")
+        .select(`
+          id, 
+          service_id, 
+          session_id, 
+          date, 
+          time, 
+          max_capacity, 
+          current_registrations, 
+          status,
+          location_name,
+          location_address,
+          location_city,
+          location_state,
+          location_zip,
+          location_phone,
+          location_notes,
+          is_virtual,
+          virtual_link,
+          location_confirmed_by,
+          parking_info,
+          driving_directions
+        `)
+        .eq("status", "active")
+        .gte("date", new Date().toISOString())
+        .order("date", { ascending: true });
 
-    if (serviceId) {
-      query = query.eq("service_id", serviceId);
+      if (serviceId) {
+        query = query.eq("service_id", serviceId);
+      }
+
+      const { data, error } = await query;
+      
+      console.log("PricingService: Sessions query result:", { data, error });
+
+      if (error) {
+        console.error("PricingService: Sessions query error:", error);
+        console.error("PricingService: Error details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+      
+      // Test if location fields exist in the data
+      if (data && data.length > 0) {
+        console.log("PricingService: First session raw data:", data[0]);
+        console.log("PricingService: Date debugging:");
+        console.log("- Raw date from DB:", data[0].date);
+        console.log("- Date object:", new Date(data[0].date));
+        console.log("- Local date string:", new Date(data[0].date).toLocaleDateString());
+        console.log("- ISO string:", new Date(data[0].date).toISOString());
+        console.log("PricingService: Location fields in first session:");
+        console.log("- location_name:", data[0].location_name);
+        console.log("- location_address:", data[0].location_address);
+        console.log("- is_virtual:", data[0].is_virtual);
+        console.log("- location_confirmed_by:", data[0].location_confirmed_by);
+      }
+      
+      const mappedData = data?.map(s => ({
+        ...s,
+        service_title: s.services?.title,
+        // Add default values for location fields in case they don't exist in DB
+        location_name: s.location_name || null,
+        location_address: s.location_address || null,
+        location_city: s.location_city || null,
+        location_state: s.location_state || null,
+        location_zip: s.location_zip || null,
+        location_phone: s.location_phone || null,
+        location_notes: s.location_notes || null,
+        is_virtual: s.is_virtual || false,
+        virtual_link: s.virtual_link || null,
+        location_confirmed_by: s.location_confirmed_by || null,
+        parking_info: s.parking_info || null,
+        driving_directions: s.driving_directions || null
+      })) || [];
+      
+      console.log("PricingService: Mapped sessions data:", mappedData);
+      return mappedData;
+    } catch (error) {
+      console.error("PricingService: Error in getSessions:", error);
+      throw error;
     }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data?.map(s => ({
-      ...s,
-      service_title: s.services?.title
-    })) || [];
   }
 
   static async calculatePricing(

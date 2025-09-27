@@ -71,12 +71,22 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   }, [isOpen]);
 
+  // Cleanup when component unmounts or dialog closes
+  useEffect(() => {
+    return () => {
+      if (cardElement) {
+        cardElement.unmount();
+        setCardElement(null);
+      }
+    };
+  }, [cardElement]);
+
   // Create payment intent when component opens
   useEffect(() => {
-    if (isOpen && stripe && elements) {
+    if (isOpen && stripe && elements && !cardElement) {
       createPaymentIntent();
     }
-  }, [isOpen, stripe, elements]);
+  }, [isOpen, stripe, elements, cardElement]);
 
   const createPaymentIntent = async () => {
     try {
@@ -96,26 +106,31 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       if (data.success) {
         setClientSecret(data.clientSecret);
         
-        // Create card element
-        const card = elements.create('card', {
-          style: {
-            base: {
-              fontSize: '16px',
-              color: '#424770',
-              '::placeholder': {
-                color: '#aab7c4',
+        // Only create card element if one doesn't exist
+        if (!cardElement) {
+          console.log('Creating new card element...');
+          const card = elements.create('card', {
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
               },
             },
-          },
-        });
+          });
 
-        card.mount('#card-element');
-        setCardElement(card);
+          card.mount('#card-element');
+          setCardElement(card);
 
-        // Handle real-time validation errors from the card Element
-        card.on('change', ({ error }) => {
-          setPaymentError(error ? error.message : null);
-        });
+          // Handle real-time validation errors from the card Element
+          card.on('change', ({ error }) => {
+            setPaymentError(error ? error.message : null);
+          });
+        } else {
+          console.log('Card element already exists, skipping creation');
+        }
       } else {
         throw new Error(data.error || "Failed to create payment intent");
       }
@@ -158,6 +173,21 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       if (paymentIntent.status === 'succeeded') {
         // Confirm payment and complete registration
+        console.log("PaymentForm: Calling confirm-payment Edge function...");
+        console.log("PaymentForm: Payment intent ID:", paymentIntent.id);
+        console.log("PaymentForm: Registration data:", {
+          sessionId,
+          trainingTitle,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          company: formData.company,
+          phone: formData.phone,
+          jobTitle: formData.jobTitle,
+          experienceLevel: formData.experienceLevel,
+          expectations: formData.expectations,
+        });
+        
         const { data, error } = await supabase.functions.invoke('confirm-payment', {
           body: {
             paymentIntentId: paymentIntent.id,
@@ -176,7 +206,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           }
         });
 
-        if (error) throw error;
+        console.log("PaymentForm: Edge function response:", { data, error });
+        if (error) {
+          console.error("PaymentForm: Edge function error:", error);
+          console.error("PaymentForm: Error details:", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error;
+        }
 
         if (data.success) {
           toast({
@@ -211,8 +251,22 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     }).format(amount);
   };
 
+  const handleDialogClose = (open: boolean) => {
+    if (!open && !isProcessing) {
+      // Clean up card element
+      if (cardElement) {
+        cardElement.unmount();
+        setCardElement(null);
+      }
+      // Reset state
+      setClientSecret(null);
+      setPaymentError(null);
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center">

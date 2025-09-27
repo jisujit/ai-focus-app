@@ -1,7 +1,7 @@
 -- Create tables for form submissions and registration management
 
 -- Training registrations table
-CREATE TABLE public.training_registrations (
+CREATE TABLE IF NOT EXISTS public.training_registrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id TEXT NOT NULL,
   training_title TEXT NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE public.training_registrations (
 );
 
 -- Contact form submissions table
-CREATE TABLE public.contact_submissions (
+CREATE TABLE IF NOT EXISTS public.contact_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
@@ -39,22 +39,26 @@ ALTER TABLE public.training_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contact_submissions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for training registrations
+DROP POLICY IF EXISTS "Anyone can insert training registrations" ON public.training_registrations;
 CREATE POLICY "Anyone can insert training registrations" 
 ON public.training_registrations 
 FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own registrations by email" ON public.training_registrations;
 CREATE POLICY "Users can view their own registrations by email" 
 ON public.training_registrations 
 FOR SELECT 
 USING (true);
 
 -- Create policies for contact submissions
+DROP POLICY IF EXISTS "Anyone can insert contact submissions" ON public.contact_submissions;
 CREATE POLICY "Anyone can insert contact submissions" 
 ON public.contact_submissions 
 FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Users can view their own submissions by email" ON public.contact_submissions;
 CREATE POLICY "Users can view their own submissions by email" 
 ON public.contact_submissions 
 FOR SELECT 

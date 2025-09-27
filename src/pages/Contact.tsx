@@ -44,14 +44,14 @@ const Contact = () => {
     {
       icon: Phone,
       title: "Phone",
-      content: "+1 (555) 123-4567",
+      content: "+1 (904) 413-1317",
       description: "Call for immediate assistance"
     },
     {
       icon: MapPin,
       title: "Location",
-      content: "Global Training Services",
-      description: "Virtual and on-site training available"
+      content: "Jacksonville, FL & Virtual",
+      description: "On-site and virtual training available"
     },
     {
       icon: Clock,
@@ -166,7 +166,7 @@ const Contact = () => {
               variant="hero" 
               size="lg" 
               className="text-lg px-8 py-4"
-              onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Training Inquiry'}
+              onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Training Inquiry'}
             >
               <MessageSquare className="w-5 h-5 mr-2" />
               Start Conversation
@@ -238,7 +238,7 @@ const Contact = () => {
                   <Input 
                     id="phone" 
                     type="tel" 
-                    placeholder="+1 (555) 123-4567" 
+                    placeholder="+1 (904) 413-1317" 
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                   />
@@ -320,7 +320,7 @@ const Contact = () => {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Enterprise Training Programs'}
+                    onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Enterprise Training Programs'}
                   >
                     Learn About Enterprise Programs
                   </Button>
@@ -351,7 +351,7 @@ const Contact = () => {
               variant="outline" 
               size="lg" 
               className="text-lg px-8 py-4"
-              onClick={() => window.location.href = 'mailto:sujit@ai-focus.org?subject=Training Brochure Request'}
+              onClick={() => window.location.href = 'mailto:info@ai-focus.org?subject=Training Brochure Request'}
             >
               Download Training Brochure
             </Button>

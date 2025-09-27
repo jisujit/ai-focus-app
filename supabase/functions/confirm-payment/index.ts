@@ -29,15 +29,47 @@ serve(async (req) => {
   }
 
   try {
+    console.log("=== CONFIRM PAYMENT EDGE FUNCTION STARTED v2 ===");
+    console.log("Request method:", req.method);
+    console.log("Request headers:", Object.fromEntries(req.headers.entries()));
     console.log("Confirming payment and completing registration...");
 
+    // Check environment variables
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    
+    console.log("Environment variables check:");
+    console.log("- SUPABASE_URL:", supabaseUrl ? "SET" : "MISSING");
+    console.log("- SUPABASE_SERVICE_ROLE_KEY:", supabaseServiceKey ? "SET" : "MISSING");
+    console.log("- STRIPE_SECRET_KEY:", stripeSecretKey ? "SET" : "MISSING");
+    
+    if (!supabaseUrl || !supabaseServiceKey || !stripeSecretKey) {
+      throw new Error("Missing required environment variables");
+    }
+
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      supabaseUrl,
+      supabaseServiceKey,
       { auth: { persistSession: false } }
     );
 
-    const { paymentIntentId, registrationData }: ConfirmPaymentRequest = await req.json();
+    let paymentIntentId: string;
+    let registrationData: any;
+    
+    try {
+      const requestBody = await req.json();
+      console.log("Raw request body:", JSON.stringify(requestBody, null, 2));
+      
+      paymentIntentId = requestBody.paymentIntentId;
+      registrationData = requestBody.registrationData;
+      
+      console.log("Received payment intent ID:", paymentIntentId);
+      console.log("Received registration data:", JSON.stringify(registrationData, null, 2));
+    } catch (jsonError) {
+      console.error("Error parsing request JSON:", jsonError);
+      throw new Error(`Invalid request format: ${jsonError.message}`);
+    }
 
     // Verify payment intent with Stripe
     const stripeResponse = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}`, {
@@ -84,11 +116,85 @@ serve(async (req) => {
       }
     }
 
+    // Check if registrationData.sessionId is a UUID or session_id
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(registrationData.sessionId);
+    console.log("Session ID type check:", { sessionId: registrationData.sessionId, isUuid });
+
+    let sessionUuid: string;
+
+    if (isUuid) {
+      // If it's already a UUID, use it directly
+      console.log("Session ID is already a UUID, using directly");
+      sessionUuid = registrationData.sessionId;
+    } else {
+      // If it's a session_id, look up the UUID
+      console.log("Looking up session UUID for session_id:", registrationData.sessionId);
+      
+      try {
+        const { data: sessionData, error: sessionError } = await supabaseClient
+          .from("sessions")
+          .select("id")
+          .eq("session_id", registrationData.sessionId)
+          .single();
+
+        console.log("Session lookup result:", { sessionData, sessionError });
+
+        if (sessionError || !sessionData) {
+          console.error("Session lookup error:", sessionError);
+          
+          // Try to list all sessions to debug
+          const { data: allSessions, error: allSessionsError } = await supabaseClient
+            .from("sessions")
+            .select("id, session_id, status");
+          
+          console.log("All sessions in database:", { allSessions, allSessionsError });
+          
+          throw new Error(`Session not found: ${registrationData.sessionId}. Available sessions: ${allSessions?.map(s => s.session_id).join(', ') || 'none'}`);
+        }
+
+        sessionUuid = sessionData.id;
+        console.log("Found session UUID:", sessionUuid);
+      } catch (lookupError) {
+        console.error("Session lookup failed:", lookupError);
+        throw lookupError;
+      }
+    }
+
     // Insert registration into database with payment details
+    console.log("Attempting to insert registration with data:", {
+      session_id: sessionUuid,
+      training_title: registrationData.trainingTitle,
+      first_name: registrationData.firstName,
+      last_name: registrationData.lastName,
+      email: registrationData.email,
+      company: registrationData.company,
+      phone: registrationData.phone,
+      job_title: registrationData.jobTitle,
+      experience_level: registrationData.experienceLevel,
+      expectations: registrationData.expectations,
+      status: 'confirmed',
+      payment_status: 'paid',
+      stripe_payment_intent_id: paymentIntentId,
+      stripe_customer_id: customerId,
+      payment_amount: paymentIntent.amount,
+      payment_currency: paymentIntent.currency,
+      payment_receipt_url: paymentIntent.charges?.data?.[0]?.receipt_url,
+    });
+
+    // Test the session UUID format
+    console.log("Session UUID details:", {
+      value: sessionUuid,
+      type: typeof sessionUuid,
+      length: sessionUuid.length,
+      isUuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionUuid)
+    });
+
+    // Try using direct SQL query with explicit UUID casting
+    console.log("Using direct SQL query with UUID casting...");
     const { data, error } = await supabaseClient
       .from("training_registrations")
       .insert({
-        session_id: registrationData.sessionId,
+        session_id: sessionUuid,
         training_title: registrationData.trainingTitle,
         first_name: registrationData.firstName,
         last_name: registrationData.lastName,
@@ -109,8 +215,15 @@ serve(async (req) => {
       .select()
       .single();
 
+    console.log("Database insert result:", { data, error });
     if (error) {
       console.error("Database error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
 
