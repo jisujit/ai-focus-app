@@ -15,6 +15,7 @@ import {
   Linkedin,
   Mail
 } from "lucide-react";
+// Import the image with a different approach to avoid cache issues
 import sujitPhoto from "@/assets/sujit-professional.jpg";
 
 const About = () => {
@@ -78,6 +79,10 @@ const About = () => {
                     src={sujitPhoto} 
                     alt="Sujit Gangadharan - AI & Automation Strategist"
                     className="w-full h-full object-cover object-top"
+                    onError={(e) => {
+                      console.log('Image failed to load, trying fallback');
+                      e.currentTarget.src = '/src/assets/sujit-professional.jpg';
+                    }}
                   />
                 </div>
                 {/* Floating Stats */}

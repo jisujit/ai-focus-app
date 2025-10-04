@@ -39,6 +39,10 @@ interface Service {
   session_outline?: string[];
   icon: string;
   available: boolean;
+  status: 'draft' | 'coming_soon' | 'active' | 'archived';
+  show_pricing: boolean;
+  allow_registration: boolean;
+  coming_soon_message?: string;
 }
 
 interface Session {
@@ -51,6 +55,9 @@ interface Session {
   current_registrations: number;
   status: string;
   service_title?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+  deletion_reason?: string;
 }
 
 const Admin = () => {
@@ -77,7 +84,11 @@ const Admin = () => {
     features: "",
     session_outline: "",
     icon: "Brain",
-    available: true
+    available: true,
+    status: "draft" as 'draft' | 'coming_soon' | 'active' | 'archived',
+    show_pricing: false,
+    allow_registration: false,
+    coming_soon_message: "Coming Soon! Stay tuned for registration details."
   });
 
   const [sessionForm, setSessionForm] = useState({
@@ -117,6 +128,7 @@ const Admin = () => {
 
   const handleAuthenticated = () => {
     setIsAuthenticated(true);
+    setLoading(true);
     fetchServices();
     fetchSessions();
     if (showTestTools) {
@@ -141,8 +153,10 @@ const Admin = () => {
       console.log("Admin: Services query result:", { data, error });
       if (error) throw error;
       setServices(data || []);
+      setLoading(false);
     } catch (error: any) {
       console.error("Admin: Error fetching services:", error);
+      setLoading(false);
       toast({
         title: "Error",
         description: "Failed to fetch services",
@@ -467,7 +481,11 @@ const Admin = () => {
       features: "",
       session_outline: "",
       icon: "Brain",
-      available: true
+      available: true,
+      status: "draft",
+      show_pricing: false,
+      allow_registration: false,
+      coming_soon_message: "Coming Soon! Stay tuned for registration details."
     });
   };
 
@@ -500,7 +518,11 @@ const Admin = () => {
       ...service,
       features: service.features.join('\n'),
       session_outline: service.session_outline?.join('\n') || "",
-      early_bird_price: service.early_bird_price || 0
+      early_bird_price: service.early_bird_price || 0,
+      status: service.status || "draft",
+      show_pricing: service.show_pricing || false,
+      allow_registration: service.allow_registration || false,
+      coming_soon_message: service.coming_soon_message || "Coming Soon! Stay tuned for registration details."
     });
     setShowServiceDialog(true);
   };
@@ -581,32 +603,117 @@ const Admin = () => {
   };
 
   const deleteSession = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this session?")) return;
-    
-    try {
-      const { error } = await supabase
-        .from("sessions")
-        .delete()
-        .eq("id", id);
+    const session = sessions.find(s => s.id === id);
+    if (!session) return;
 
-      if (error) throw error;
-      toast({
-        title: "Success",
-        description: "Session deleted successfully",
-      });
-      fetchSessions();
-    } catch (error: any) {
+    console.log("DeleteSession: Session found:", { id, session_id: session.session_id });
+
+    // Check if there are paid registrations
+    // training_registrations.session_id is UUID that references sessions.id
+    console.log("DeleteSession: Checking registrations for session UUID:", id);
+    const { data: registrations, error: regError } = await supabase
+      .from("training_registrations")
+      .select("id, first_name, last_name, email, payment_amount, stripe_payment_intent_id")
+      .eq("session_id", id)
+      .eq("payment_status", "paid");
+
+    console.log("DeleteSession: Query result:", { registrations, regError });
+
+    if (regError) {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to check registrations",
         variant: "destructive",
       });
+      return;
+    }
+
+    const hasPaidRegistrations = registrations && registrations.length > 0;
+
+    if (hasPaidRegistrations) {
+      // Show detailed deletion dialog for sessions with paid registrations
+      const reason = prompt(`This session has ${registrations.length} paid registration(s). Please provide a reason for cancellation:`);
+      if (!reason) return;
+
+      const message = prompt("Additional message for participants (optional):");
+      
+      try {
+        // Call the session deletion function with refunds
+        const { data, error } = await supabase.functions.invoke('delete-session-with-refunds', {
+          body: {
+            sessionId: id,
+            cancellationReason: reason,
+            cancellationMessage: message || undefined,
+            deletedBy: sessionStorage.getItem("admin_email") || "admin"
+          }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Session Cancelled",
+          description: `Session cancelled successfully. ${data.refunds?.length || 0} refunds processed, ${data.emailsSent || 0} emails sent.`,
+        });
+        fetchSessions();
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to cancel session",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Simple deletion for sessions without paid registrations
+      if (!confirm("Are you sure you want to delete this session?")) return;
+      
+      try {
+        const { error } = await supabase
+          .from("sessions")
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deletion_reason: "Admin deletion",
+            deleted_by: sessionStorage.getItem("admin_email") || "admin"
+          })
+          .eq("id", id);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Session deleted successfully",
+        });
+        fetchSessions();
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
   // Show authentication if not logged in
   if (!isAuthenticated) {
     return <AdminAuth onAuthenticated={handleAuthenticated} />;
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading admin data...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (
@@ -724,9 +831,23 @@ const Admin = () => {
                           <CardTitle className="text-lg">{service.title}</CardTitle>
                           <CardDescription>{service.description}</CardDescription>
                         </div>
-                        <Badge variant={service.available ? "default" : "secondary"}>
-                          {service.available ? "Available" : "Unavailable"}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={
+                            service.status === 'active' ? "default" : 
+                            service.status === 'coming_soon' ? "secondary" :
+                            service.status === 'draft' ? "outline" : "destructive"
+                          }>
+                            {service.status === 'active' ? 'Active' :
+                             service.status === 'coming_soon' ? 'Coming Soon' :
+                             service.status === 'draft' ? 'Draft' : 'Archived'}
+                          </Badge>
+                          {service.show_pricing && (
+                            <Badge variant="outline" className="text-xs">Pricing Shown</Badge>
+                          )}
+                          {service.allow_registration && (
+                            <Badge variant="outline" className="text-xs">Registration Open</Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -789,11 +910,18 @@ const Admin = () => {
 
               <div className="space-y-4">
                 {sessions.map((session) => (
-                  <Card key={session.id}>
+                  <Card key={session.id} className={session.is_deleted ? "opacity-60 bg-muted" : ""}>
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start">
                         <div className="space-y-2">
-                          <h3 className="font-semibold">{session.service_title}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{session.service_title}</h3>
+                            {session.is_deleted && (
+                              <Badge variant="destructive" className="text-xs">
+                                Deleted
+                              </Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
@@ -809,24 +937,33 @@ const Admin = () => {
                             </div>
                             <Badge variant="outline">{session.session_id}</Badge>
                           </div>
+                          {session.is_deleted && session.deletion_reason && (
+                            <div className="text-xs text-muted-foreground">
+                              <strong>Deletion reason:</strong> {session.deletion_reason}
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editSession(session)}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteSession(session.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
-                          </Button>
+                          {!session.is_deleted && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => editSession(session)}
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteSession(session.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" />
+                                Delete
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -977,14 +1114,66 @@ const Admin = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="available"
-                checked={serviceForm.available}
-                onChange={(e) => setServiceForm({...serviceForm, available: e.target.checked})}
-              />
-              <Label htmlFor="available">Available for registration</Label>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="status">Service Status</Label>
+                <select
+                  id="status"
+                  value={serviceForm.status}
+                  onChange={(e) => setServiceForm({...serviceForm, status: e.target.value as any})}
+                  className="w-full p-2 border rounded-md"
+                  required
+                >
+                  <option value="draft">Draft (Not visible to public)</option>
+                  <option value="coming_soon">Coming Soon (Visible, no registration)</option>
+                  <option value="active">Active (Full functionality)</option>
+                  <option value="archived">Archived (Hidden from public)</option>
+                </select>
+              </div>
+
+              {serviceForm.status === 'coming_soon' && (
+                <div>
+                  <Label htmlFor="coming_soon_message">Coming Soon Message</Label>
+                  <Textarea
+                    id="coming_soon_message"
+                    value={serviceForm.coming_soon_message}
+                    onChange={(e) => setServiceForm({...serviceForm, coming_soon_message: e.target.value})}
+                    rows={2}
+                    placeholder="Coming Soon! Stay tuned for registration details."
+                  />
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="show_pricing"
+                    checked={serviceForm.show_pricing}
+                    onChange={(e) => setServiceForm({...serviceForm, show_pricing: e.target.checked})}
+                  />
+                  <Label htmlFor="show_pricing">Show Pricing</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="allow_registration"
+                    checked={serviceForm.allow_registration}
+                    onChange={(e) => setServiceForm({...serviceForm, allow_registration: e.target.checked})}
+                  />
+                  <Label htmlFor="allow_registration">Allow Registration</Label>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="available"
+                  checked={serviceForm.available}
+                  onChange={(e) => setServiceForm({...serviceForm, available: e.target.checked})}
+                />
+                <Label htmlFor="available">Available for registration (Legacy field)</Label>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t bg-background sticky bottom-0">

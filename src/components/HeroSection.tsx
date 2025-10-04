@@ -68,7 +68,7 @@ const HeroSection = () => {
               variant="outline-white" 
               size="lg" 
               className="text-lg px-8 py-4"
-              onClick={() => window.open('https://calendly.com/ai-focus-academy/demo', '_blank')}
+              onClick={() => window.open('https://oncehub.com/PAGE-BF22975024', '_blank')}
             >
               <Calendar className="w-5 h-5 mr-2" />
               Book a Call

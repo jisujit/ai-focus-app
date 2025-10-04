@@ -84,6 +84,22 @@ serve(async (req) => {
             </ul>
           </div>
 
+          <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📋 View Your Registrations</h3>
+            <p style="color: #666; margin: 0 0 15px 0; line-height: 1.5;">
+              You can view all your registrations and session details at any time using our secure registration portal.
+            </p>
+            <div style="text-align: center; margin: 15px 0;">
+              <a href="https://ai-focus.org"
+                 style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                📋 View My Registrations
+              </a>
+            </div>
+            <p style="color: #999; font-size: 12px; margin: 10px 0 0 0; text-align: center;">
+              Click the button above and use "View My Registrations" in the navigation
+            </p>
+          </div>
+
           <div style="text-align: center; margin: 30px 0;">
             <a href="mailto:support@ai-focus.org"
                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block; margin: 5px;">

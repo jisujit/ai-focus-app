@@ -300,11 +300,6 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                       Session Location
                     </h4>
                     
-                    {/* Debug info */}
-                    <div className="text-xs text-gray-500 mb-2">
-                      Debug: is_virtual={String(session.is_virtual)}, has_location_name={String(!!session.location_name)}
-                    </div>
-                    
                     {session.is_virtual ? (
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2 text-sm">
@@ -388,10 +383,6 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                       </div>
                     )}
                     
-                    {/* Always show this for testing */}
-                    <div className="text-xs text-blue-600 mt-2">
-                      ✅ Location card is working! Session ID: {session.id || 'unknown'}
-                    </div>
                   </CardContent>
                 </Card>
               );
@@ -436,7 +427,10 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-medium">Session {session.session_id}</div>
+                              <div className="font-medium">Training Session</div>
+                              <div className="text-xs text-muted-foreground/60 mb-1">
+                                Reference: {session.session_id}
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 {(() => {
                                   // Parse date string directly to avoid timezone issues

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, Calendar, Clock, Mail, Phone, Building, User } from "lucide-react";
+import { Search, Calendar, Clock, Mail, Phone, Building, User, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -126,32 +126,40 @@ const RegistrationStatusChecker = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg">
-          <Search className="w-5 h-5 mr-2" />
-          Check Registration Status
+        <Button variant="outline" size="sm" className="ml-2" aria-label="View my training registrations">
+          <ClipboardList className="w-4 h-4 mr-2" />
+          View My Registrations
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center">
-            <Search className="w-6 h-6 text-accent mr-3" />
-            Check Your Registration Status
+            <ClipboardList className="w-6 h-6 text-accent mr-3" />
+            View Your Registrations
           </DialogTitle>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Quick Tip:</strong> Enter the email address you used when registering for training sessions. We'll show you all your registrations and their current status.
+            </p>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Search Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Enter Your Email</CardTitle>
+              <CardTitle className="text-lg flex items-center">
+                <Search className="w-5 h-5 mr-2 text-accent" />
+                Look Up Your Registrations
+              </CardTitle>
               <CardDescription>
-                We'll look up all your training registrations and contact submissions
+                Enter your email address to view all your training registrations and contact submissions
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="statusEmail">Email Address</Label>
+                  <Label htmlFor="statusEmail" className="text-sm font-medium">Email Address</Label>
                   <Input
                     id="statusEmail"
                     type="email"
@@ -159,15 +167,25 @@ const RegistrationStatusChecker = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your.email@company.com"
                     onKeyPress={(e) => e.key === 'Enter' && handleCheck()}
+                    className="mt-1"
+                    aria-label="Enter your email address to check registrations"
+                    aria-required="true"
                   />
                 </div>
                 <div className="flex items-end">
                   <Button 
                     onClick={handleCheck} 
-                    disabled={isChecking}
+                    disabled={isChecking || !email}
                     className="min-w-[120px]"
                   >
-                    {isChecking ? "Checking..." : "Check Status"}
+                    {isChecking ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Looking up...
+                      </>
+                    ) : (
+                      "View Registrations"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -233,8 +251,8 @@ const RegistrationStatusChecker = () => {
                                   {getStatusBadge(registration.payment_status)}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-muted-foreground">Session:</span>
-                                  <Badge variant="outline">{registration.session_id}</Badge>
+                                  <span className="text-xs text-muted-foreground/60">Reference:</span>
+                                  <span className="text-xs text-muted-foreground/60 font-mono">{registration.session_id}</span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   <div className="flex items-center">

@@ -40,6 +40,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   useEffect(() => {
     const initializeStripe = async () => {
       console.log('Initializing Stripe...');
+      console.log('Stripe publishable key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+      console.log('Is test key?', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_'));
       const stripeInstance = await stripePromise;
       console.log('Stripe instance:', stripeInstance);
       

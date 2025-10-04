@@ -14,6 +14,10 @@ export interface Service {
   session_outline?: string[];
   icon: string;
   available: boolean;
+  status: 'draft' | 'coming_soon' | 'active' | 'archived';
+  show_pricing: boolean;
+  allow_registration: boolean;
+  coming_soon_message?: string;
 }
 
 export interface Session {
@@ -111,6 +115,7 @@ export class PricingService {
           driving_directions
         `)
         .eq("status", "active")
+        .eq("is_deleted", false)
         .gte("date", new Date().toISOString())
         .order("date", { ascending: true });
 

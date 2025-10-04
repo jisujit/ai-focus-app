@@ -38,6 +38,10 @@ serve(async (req) => {
     }
 
     // Create payment intent via Stripe API
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    console.log("DEBUG: Stripe Secret Key starts with:", stripeSecretKey?.substring(0, 10));
+    console.log("DEBUG: Is test key?", stripeSecretKey?.startsWith("sk_test_"));
+    
     const formData = new URLSearchParams();
     formData.append('amount', amount.toString());
     formData.append('currency', currency);
@@ -49,10 +53,11 @@ serve(async (req) => {
     formData.append('metadata[training_title]', trainingTitle);
     formData.append('metadata[session_id]', sessionId);
 
+    console.log("DEBUG: Making Stripe API call with key:", stripeSecretKey?.substring(0, 10) + "...");
     const stripeResponse = await fetch("https://api.stripe.com/v1/payment_intents", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${Deno.env.get("STRIPE_SECRET_KEY")}`,
+        "Authorization": `Bearer ${stripeSecretKey}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: formData,
