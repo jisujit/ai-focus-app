@@ -116,53 +116,54 @@ serve(async (req) => {
       }
     }
 
-    // Check if registrationData.sessionId is a UUID or session_id
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(registrationData.sessionId);
-    console.log("Session ID type check:", { sessionId: registrationData.sessionId, isUuid });
+    // The training_registrations.session_id field is TEXT, not UUID
+    // We need to store the session_id (like "102501") directly, not the UUID
+    console.log("Using session_id directly for registration:", registrationData.sessionId);
+    
+    // VALIDATION: Ensure session_id is TEXT format, not UUID
+    const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(registrationData.sessionId);
+    if (isUuidFormat) {
+      console.error("CRITICAL ERROR: session_id is UUID format, but database expects TEXT format!");
+      console.error("This will cause 'operator does not exist: uuid = text' error");
+      console.error("session_id received:", registrationData.sessionId);
+      console.error("Expected format: TEXT (like '102501')");
+      throw new Error("Invalid session_id format: received UUID but expected TEXT session_id (like '102501'). Check frontend code - should pass selectedSession, not selectedSessionUuid.");
+    }
+    
+    console.log("✅ session_id format validation passed - using TEXT session_id");
+    
+    // Verify the session exists (optional check)
+    try {
+      const { data: sessionData, error: sessionError } = await supabaseClient
+        .from("sessions")
+        .select("session_id, status")
+        .eq("session_id", registrationData.sessionId)
+        .single();
 
-    let sessionUuid: string;
+      console.log("Session verification result:", { sessionData, sessionError });
 
-    if (isUuid) {
-      // If it's already a UUID, use it directly
-      console.log("Session ID is already a UUID, using directly");
-      sessionUuid = registrationData.sessionId;
-    } else {
-      // If it's a session_id, look up the UUID
-      console.log("Looking up session UUID for session_id:", registrationData.sessionId);
-      
-      try {
-        const { data: sessionData, error: sessionError } = await supabaseClient
+      if (sessionError || !sessionData) {
+        console.error("Session verification error:", sessionError);
+        
+        // Try to list all sessions to debug
+        const { data: allSessions, error: allSessionsError } = await supabaseClient
           .from("sessions")
-          .select("id")
-          .eq("session_id", registrationData.sessionId)
-          .single();
-
-        console.log("Session lookup result:", { sessionData, sessionError });
-
-        if (sessionError || !sessionData) {
-          console.error("Session lookup error:", sessionError);
-          
-          // Try to list all sessions to debug
-          const { data: allSessions, error: allSessionsError } = await supabaseClient
-            .from("sessions")
-            .select("id, session_id, status");
-          
-          console.log("All sessions in database:", { allSessions, allSessionsError });
-          
-          throw new Error(`Session not found: ${registrationData.sessionId}. Available sessions: ${allSessions?.map(s => s.session_id).join(', ') || 'none'}`);
-        }
-
-        sessionUuid = sessionData.id;
-        console.log("Found session UUID:", sessionUuid);
-      } catch (lookupError) {
-        console.error("Session lookup failed:", lookupError);
-        throw lookupError;
+          .select("id, session_id, status");
+        
+        console.log("All sessions in database:", { allSessions, allSessionsError });
+        
+        throw new Error(`Session not found: ${registrationData.sessionId}. Available sessions: ${allSessions?.map(s => s.session_id).join(', ') || 'none'}`);
       }
+
+      console.log("Session verified successfully:", sessionData);
+    } catch (lookupError) {
+      console.error("Session verification failed:", lookupError);
+      throw lookupError;
     }
 
     // Insert registration into database with payment details
     console.log("Attempting to insert registration with data:", {
-      session_id: sessionUuid,
+      session_id: registrationData.sessionId,
       training_title: registrationData.trainingTitle,
       first_name: registrationData.firstName,
       last_name: registrationData.lastName,
@@ -181,20 +182,12 @@ serve(async (req) => {
       payment_receipt_url: paymentIntent.charges?.data?.[0]?.receipt_url,
     });
 
-    // Test the session UUID format
-    console.log("Session UUID details:", {
-      value: sessionUuid,
-      type: typeof sessionUuid,
-      length: sessionUuid.length,
-      isUuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionUuid)
-    });
-
-    // Try using direct SQL query with explicit UUID casting
-    console.log("Using direct SQL query with UUID casting...");
+    // Insert the registration using the session_id directly (TEXT field)
+    console.log("Inserting registration with session_id as TEXT...");
     const { data, error } = await supabaseClient
       .from("training_registrations")
       .insert({
-        session_id: sessionUuid,
+        session_id: registrationData.sessionId,
         training_title: registrationData.trainingTitle,
         first_name: registrationData.firstName,
         last_name: registrationData.lastName,

@@ -21,34 +21,34 @@ import sujitPhoto from "@/assets/sujit-professional.jpg";
 const About = () => {
   const expertise = [
     {
-      icon: Brain,
-      title: "AI Strategy & Enterprise Adoption",
-      description: "Building practical AI roadmaps that align with business objectives."
-    },
-    {
-      icon: GraduationCap,
-      title: "Machine Learning & Generative AI",
-      description: "Hands-on implementation of ML and GenAI solutions for real-world problems."
-    },
-    {
       icon: Cog,
       title: "Infrastructure Automation & DevOps",
-      description: "Expertise in Terraform, Ansible, and CI/CD pipelines for scalable environments."
+      description: "Proven leadership in architecting enterprise automation using Terraform, Ansible, and CI/CD pipelines—driving consistency, scalability, and operational efficiency across environments."
     },
     {
       icon: Cloud,
       title: "Cloud & Digital Transformation",
-      description: "Accelerating business modernization with Azure and hybrid cloud solutions."
+      description: "Expertise in modernizing technology landscapes with Azure and hybrid cloud solutions, aligning infrastructure evolution with business outcomes."
+    },
+    {
+      icon: Brain,
+      title: "AI Strategy & Enterprise Adoption",
+      description: "Advocating and enabling practical AI adoption through responsible experimentation, process integration, and workforce readiness."
     },
     {
       icon: Users,
       title: "Corporate Training & Workforce Upskilling",
-      description: "Designing and delivering impactful AI and automation training programs."
+      description: "Designing and delivering hands-on programs that simplify complex technologies—empowering professionals to apply AI and automation effectively in their roles."
     },
     {
       icon: TrendingUp,
       title: "Leadership & Change Management",
-      description: "Driving organizational readiness for AI-driven transformation."
+      description: "Guiding teams through technology and cultural transformation by fostering collaboration, adaptability, and continuous learning."
+    },
+    {
+      icon: GraduationCap,
+      title: "Generative AI & Emerging Technologies",
+      description: "Exploring real-world applications of Generative AI tools and frameworks to enhance automation, creativity, and productivity in enterprise and individual use cases."
     }
   ];
 
@@ -101,21 +101,24 @@ const About = () => {
                 <Badge className="bg-accent/10 text-accent border-accent/20 mb-4">
                   Founder & Lead Trainer
                 </Badge>
-                <h2 className="text-foreground mb-2">Sujit Gangadharan</h2>
+                <h2 className="text-foreground mb-2">About Sujit Gangadharan</h2>
                 <p className="text-xl text-accent font-semibold mb-6">
-                  AI & Automation Strategist
+                  AI & Automation Strategist | Senior Technology Leader
                 </p>
               </div>
 
               <div className="space-y-6 text-muted-foreground leading-relaxed">
                 <p>
-                  With nearly 30 years of IT leadership experience and a proven track record in AI, automation, 
-                  and digital transformation, Sujit Gangadharan brings a rare blend of strategic vision and 
-                  hands-on expertise.
+                  With nearly 30 years of experience leading digital transformation, automation, and infrastructure 
+                  modernization, Sujit Gangadharan brings a rare blend of strategic vision and hands-on technical 
+                  expertise. He has guided enterprise-scale automation and DevOps initiatives, helping organizations 
+                  simplify operations, improve reliability, and build a culture of continuous innovation.
                 </p>
                 <p>
-                  As Vice President of Infrastructure Automation and DevOps Engineering at a leading financial 
-                  institution, he has successfully driven enterprise-wide modernization and AI adoption initiatives.
+                  Over the past few years, Sujit has been an active advocate for responsible AI adoption—exploring 
+                  how practical, real-world AI applications can enhance productivity, decision-making, and automation. 
+                  His focus lies in bridging the gap between technology and people—making complex innovations accessible 
+                  and actionable for professionals and businesses alike.
                 </p>
                 <div className="bg-gradient-card p-6 rounded-xl border border-accent/10">
                   <h4 className="font-semibold text-foreground mb-3 flex items-center">
@@ -123,8 +126,8 @@ const About = () => {
                     Mission Statement
                   </h4>
                   <p className="text-foreground italic">
-                    "To empower businesses and professionals with practical, hands-on AI knowledge—enabling 
-                    them to innovate, automate, and thrive in an AI-driven future."
+                    "To help professionals and organizations understand and apply AI in practical ways—empowering 
+                    them to innovate, automate, and succeed in an AI-driven world."
                   </p>
                 </div>
               </div>
@@ -159,7 +162,7 @@ const About = () => {
           <div className="text-center mb-16">
             <h2 className="text-foreground mb-4">Areas of Expertise</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Comprehensive knowledge spanning AI strategy, technical implementation, 
+            Deep expertise in automation, cloud transformation, and emerging AI technologies. Comprehensive knowledge spanning AI strategy, technical implementation, 
               and organizational transformation
             </p>
           </div>
@@ -194,9 +197,9 @@ const About = () => {
                 Enterprise Leadership Experience
               </h3>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Currently serving as Vice President of Infrastructure Automation and DevOps Engineering 
-                at a leading financial institution, driving enterprise-wide AI adoption and digital 
-                transformation initiatives.
+                Currently serving in a senior technology leadership role, Sujit leads enterprise initiatives in
+                automation and DevOps engineering, with a growing focus on leveraging AI to enhance efficiency
+                and innovation across digital transformation efforts.
               </p>
               <Button 
                 variant="professional" 

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CreditCard, Lock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { stripePromise } from "@/integrations/stripe/client";
+import { getStripePromise } from "@/integrations/stripe/client";
 import { PaymentFormData, PaymentResult } from "@/integrations/stripe/types";
 
 interface PaymentFormProps {
@@ -42,7 +42,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       console.log('Initializing Stripe...');
       console.log('Stripe publishable key:', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
       console.log('Is test key?', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_'));
-      const stripeInstance = await stripePromise;
+      const stripeInstance = await getStripePromise();
       console.log('Stripe instance:', stripeInstance);
       
       if (stripeInstance) {

@@ -145,13 +145,19 @@ const Admin = () => {
   const fetchServices = async () => {
     try {
       console.log("Admin: Fetching services...");
+      console.log("Admin: Supabase URL:", import.meta.env.VITE_SUPABASE_URL);
+      console.log("Admin: Supabase key:", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.substring(0, 20) + "...");
+      
       const { data, error } = await supabase
         .from("services")
         .select("*")
         .order("created_at", { ascending: false });
 
       console.log("Admin: Services query result:", { data, error });
-      if (error) throw error;
+      if (error) {
+        console.error("Admin: Supabase error:", error);
+        throw error;
+      }
       setServices(data || []);
       setLoading(false);
     } catch (error: any) {
@@ -159,7 +165,7 @@ const Admin = () => {
       setLoading(false);
       toast({
         title: "Error",
-        description: "Failed to fetch services",
+        description: `Failed to fetch services: ${error.message || error}`,
         variant: "destructive",
       });
     }

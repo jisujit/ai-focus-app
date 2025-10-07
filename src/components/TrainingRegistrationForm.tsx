@@ -609,13 +609,15 @@ const TrainingRegistrationForm: React.FC<TrainingRegistrationFormProps> = ({
       </DialogContent>
 
       {/* Payment Form Modal */}
+      {/* CRITICAL: Pass selectedSession (TEXT like "102501"), NOT selectedSessionUuid (UUID) */}
+      {/* The confirm-payment function expects TEXT session_id, not UUID */}
       <PaymentForm
         isOpen={showPaymentForm}
         onClose={() => setShowPaymentForm(false)}
         onPaymentSuccess={handlePaymentSuccess}
         formData={getPaymentFormData()}
         trainingTitle={trainingTitle}
-        sessionId={selectedSessionUuid}
+        sessionId={selectedSession}
       />
     </Dialog>
   );

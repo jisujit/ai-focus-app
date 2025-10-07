@@ -140,13 +140,13 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
   };
 
   return (
-    <div className="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-border/50 py-4" role="search" aria-label="Search and filter training services">
+    <div className="sticky top-20 z-40 bg-white/95 backdrop-blur-md border-b border-border/50 py-3" role="search" aria-label="Search and filter training services">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Search Bar */}
         <div className="relative">
-          <div className="flex items-center space-x-3 mb-3">
+          <div className="flex items-center gap-2 mb-2">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" aria-hidden="true" />
               <Input
                 type="text"
                 placeholder="Search services, features, or keywords..."
@@ -157,7 +157,7 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                 }}
                 onFocus={() => setShowSuggestions(searchQuery.length > 0)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className="pl-10 pr-4 py-2 text-base border-2 border-border/50 focus:border-accent transition-all duration-300 rounded-lg shadow-soft hover:shadow-medium"
+                className="pl-12 pr-11 h-11 text-[15px] border border-border/60 focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-all duration-200 rounded-full shadow-none hover:border-border/80"
                 aria-label="Search training services"
               />
               {searchQuery && (
@@ -165,22 +165,19 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 h-7 w-7 p-0 rounded-full hover:bg-accent/10"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               )}
             </div>
-            
             <Button
               variant="outline"
               onClick={() => setIsFiltersOpen(!isFiltersOpen)}
               className={cn(
-                "px-4 py-2 border-2 transition-all duration-300 rounded-lg",
-                isFiltersOpen 
-                  ? "border-accent bg-accent/5 text-accent" 
-                  : "border-border/50 hover:border-accent/50"
+                "h-11 px-4 border border-border/60 rounded-full transition-colors",
+                isFiltersOpen ? "border-accent bg-accent/5 text-accent" : "hover:border-border"
               )}
               aria-label={`${isFiltersOpen ? 'Close' : 'Open'} filter options`}
               aria-expanded={isFiltersOpen}
@@ -188,7 +185,7 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
               <Filter className="w-4 h-4 mr-2" />
               Filters
               {getActiveFiltersCount() > 0 && (
-                <Badge variant="secondary" className="ml-2 bg-accent text-accent-foreground text-xs" aria-label={`${getActiveFiltersCount()} active filters`}>
+                <Badge variant="secondary" className="ml-2 rounded-full px-2 bg-accent text-accent-foreground text-xs" aria-label={`${getActiveFiltersCount()} active filters`}>
                   {getActiveFiltersCount()}
                 </Badge>
               )}
@@ -197,7 +194,7 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
 
           {/* Quick Stats - Only show when user has searched or filtered */}
           {(searchQuery || getActiveFiltersCount() > 0) && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
                   <Zap className="w-4 h-4 mr-1 text-accent" />
@@ -220,7 +217,7 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
 
         {/* Advanced Filters Panel */}
         {isFiltersOpen && (
-          <Card className="border-2 border-accent/20 shadow-strong animate-in slide-in-from-top-2 duration-300">
+          <Card className="border border-border/60 shadow-soft animate-in slide-in-from-top-2 duration-200 rounded-2xl">
             <CardContent className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Status Filter */}
@@ -229,15 +226,15 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                     <CheckCircle className="w-4 h-4 mr-2 text-accent" />
                     Status
                   </h4>
-                  <div className="space-y-1">
+                    <div className="space-y-1.5">
                     {filterOptions.statuses.map(status => (
                       <Button
                         key={status}
-                        variant={selectedFilters.status.includes(status) ? "default" : "outline"}
-                        size="sm"
+                          variant={selectedFilters.status.includes(status) ? "default" : "outline"}
+                          size="sm"
                         onClick={() => toggleFilter('status', status)}
                         className={cn(
-                          "w-full justify-start text-sm",
+                          "w-full justify-start text-sm rounded-full",
                           selectedFilters.status.includes(status) && getStatusColor(status)
                         )}
                       >
@@ -254,14 +251,14 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                     <Star className="w-4 h-4 mr-2 text-accent" />
                     Level
                   </h4>
-                  <div className="space-y-1">
+                    <div className="space-y-1.5">
                     {filterOptions.levels.map(level => (
                       <Button
                         key={level}
                         variant={selectedFilters.level.includes(level) ? "default" : "outline"}
                         size="sm"
                         onClick={() => toggleFilter('level', level)}
-                        className="w-full justify-start text-sm"
+                          className="w-full justify-start text-sm rounded-full"
                       >
                         <span className="capitalize">{level}</span>
                       </Button>
@@ -275,14 +272,14 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                     <Users className="w-4 h-4 mr-2 text-accent" />
                     Format
                   </h4>
-                  <div className="space-y-1">
+                    <div className="space-y-1.5">
                     {filterOptions.formats.map(format => (
                       <Button
                         key={format}
                         variant={selectedFilters.format.includes(format) ? "default" : "outline"}
                         size="sm"
                         onClick={() => toggleFilter('format', format)}
-                        className="w-full justify-start text-sm"
+                          className="w-full justify-start text-sm rounded-full"
                       >
                         <span className="capitalize">{format}</span>
                       </Button>
@@ -296,14 +293,14 @@ const ServicesSearch: React.FC<ServicesSearchProps> = ({ services, onFilteredSer
                     <Clock className="w-4 h-4 mr-2 text-accent" />
                     Duration
                   </h4>
-                  <div className="space-y-1">
+                    <div className="space-y-1.5">
                     {filterOptions.durations.map(duration => (
                       <Button
                         key={duration}
                         variant={selectedFilters.duration.includes(duration) ? "default" : "outline"}
                         size="sm"
                         onClick={() => toggleFilter('duration', duration)}
-                        className="w-full justify-start text-sm"
+                          className="w-full justify-start text-sm rounded-full"
                       >
                         <span>{duration}</span>
                       </Button>

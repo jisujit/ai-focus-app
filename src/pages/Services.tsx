@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TrainingRegistrationForm from "@/components/TrainingRegistrationForm";
 import ServicesSearch from "@/components/ServicesSearch";
 import { PricingService, Service, Session } from "@/services/pricingService";
@@ -17,6 +17,20 @@ import {
   ArrowRight,
   Star,
   DollarSign,
+  BrainCircuit,
+  BrainCog,
+  HardHat,
+  Wrench,
+  Drill,
+  DatabaseZap,
+  GraduationCap,
+  LibraryBig,
+  School,
+  University,
+  BriefcaseMedical,
+  Hospital,
+  Stethoscope,
+  Ambulance,
   Calendar,
   ChevronDown,
   ChevronUp
@@ -37,6 +51,9 @@ const Services = () => {
     fetchSessions();
   }, []);
 
+  // Layout toggle: 'grid' (current) or 'rows' (horizontal scrollers by format)
+  const layoutMode: 'grid' | 'rows' = (import.meta as any).env?.VITE_SERVICES_LAYOUT === 'rows' ? 'rows' : 'grid';
+
   // Sort services when both services and sessions are loaded
   useEffect(() => {
     if (services.length > 0 && sessions.length >= 0) {
@@ -55,6 +72,36 @@ const Services = () => {
     } catch (error) {
       console.error("Error fetching services:", error);
     }
+  };
+
+  // Group services by format for horizontal rows
+  const groupByFormat = (items: Service[]) => {
+    const byFormat: Record<string, Service[]> = {
+      'Instructor-led In-person': [],
+      'Instructor-led Online': [],
+      'Self-paced': [],
+    };
+    items.forEach((s) => {
+      const key = s.format as keyof typeof byFormat;
+      if (byFormat[key]) byFormat[key].push(s);
+    });
+    return byFormat;
+  };
+
+  const formatGroups = groupByFormat(
+    filteredServices.filter((s) => s.status !== 'draft' && s.status !== 'archived')
+  );
+
+  // Horizontal scroll helpers
+  const inPersonRef = useRef<HTMLDivElement>(null);
+  const onlineRef = useRef<HTMLDivElement>(null);
+  const selfPacedRef = useRef<HTMLDivElement>(null);
+
+  const scrollRow = (ref: React.RefObject<HTMLDivElement>, dir: 'left' | 'right') => {
+    const node = ref.current;
+    if (!node) return;
+    const amount = Math.max(node.clientWidth * 0.8, 300);
+    node.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
   };
 
   const fetchSessions = async () => {
@@ -103,7 +150,22 @@ const Services = () => {
       CheckCircle,
       ArrowRight,
       Star,
-      DollarSign
+      DollarSign,
+      // New Lucide icons mapped by kebab-case names
+      'brain-circuit': BrainCircuit,
+      'brain-cog': BrainCog,
+      'hard-hat': HardHat,
+      wrench: Wrench,
+      drill: Drill,
+      'database-zap': DatabaseZap,
+      'graduation-cap': GraduationCap,
+      'library-big': LibraryBig,
+      school: School,
+      university: University,
+      'briefcase-medical': BriefcaseMedical,
+      hospital: Hospital,
+      stethoscope: Stethoscope,
+      ambulance: Ambulance,
     };
     return icons[iconName] || Brain;
   };
@@ -213,10 +275,10 @@ const Services = () => {
                 Go to Admin Dashboard
               </Button>
             </div>
-          ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Available training services">
+          ) : layoutMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Available training services">
               {filteredServices
-                .filter(service => service.status !== 'draft' && service.status !== 'archived') // Hide draft and archived services
+                .filter(service => service.status !== 'draft' && service.status !== 'archived')
                 .map((service) => {
                 const IconComponent = getIconComponent(service.icon);
                 const serviceSessions = getServiceSessions(service.id);
@@ -429,9 +491,302 @@ const Services = () => {
                       </div>
                     </div>
                   </Card>
-                );
-              })}
-          </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {/* Instructor-led In-person */}
+              {formatGroups['Instructor-led In-person'].length > 0 && (
+                <section aria-label="Instructor-led In-Person" className="relative">
+                  <div className="flex items-baseline justify-between mb-3">
+                    <h3 className="text-lg font-semibold">Instructor-led In-Person</h3>
+                    <span className="text-sm text-muted-foreground">{formatGroups['Instructor-led In-person'].length} program{formatGroups['Instructor-led In-person'].length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg-white"
+                      aria-label="Scroll left"
+                      onClick={() => scrollRow(inPersonRef, 'left')}
+                    >
+                      <ChevronDown className="rotate-90 w-4 h-4" />
+                    </button>
+                    <div
+                      ref={inPersonRef}
+                      role="list"
+                      aria-label="In-Person programs"
+                      className="overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-4"
+                    >
+                      <div className="flex gap-4 pr-4 snap-x">
+                        {formatGroups['Instructor-led In-person'].map((service) => {
+                          const IconComponent = getIconComponent(service.icon);
+                          const serviceSessions = getServiceSessions(service.id);
+                          const hasAvailableSessions = serviceSessions.length > 0;
+                          const isExpanded = expandedCards.has(service.id);
+                          return (
+                            <Card
+                              key={service.id}
+                              className={`relative min-w-[300px] max-w-[360px] snap-start overflow-hidden shadow-soft hover:shadow-strong transition-all duration-300 hover-lift ${service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'border-accent shadow-glow' : 'border-muted-foreground/20'}`}
+                              role="listitem"
+                              aria-labelledby={`service-title-${service.id}`}
+                            >
+                              {/* Reuse the same inner content */}
+                              <div className="p-4 pb-3">
+                                <div className="flex items-start space-x-2 mb-2">
+                                  <div className="w-6 h-6 bg-gradient-primary rounded-md flex items-center justify-center shadow-soft flex-shrink-0 mt-0.5">
+                                    <IconComponent className="w-3 h-3 text-white" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-1">
+                                      <h3 id={`service-title-${service.id}`} className="text-base font-semibold text-foreground leading-tight">
+                                        {service.title}
+                                      </h3>
+                                      <div className="flex-shrink-0 ml-2">
+                                        {service.status === 'active' && service.allow_registration && hasAvailableSessions ? (
+                                          <Badge className="bg-success text-success-foreground text-xs px-2 py-1"><CheckCircle className="w-3 h-3 mr-1" />Available</Badge>
+                                        ) : service.status === 'coming_soon' ? (
+                                          <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />Soon</Badge>
+                                        ) : service.status === 'active' && !hasAvailableSessions ? (
+                                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />No Sessions</Badge>
+                                        ) : (
+                                          <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs px-2 py-1">Inactive</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+                                      {isExpanded ? service.description : `${service.description.substring(0, 150)}${service.description.length > 150 ? '...' : ''}`}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                  <div className="flex items-center"><Clock className="w-3 h-3 mr-1" />{service.duration}</div>
+                                  <span className="text-muted-foreground/50">•</span>
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{service.level}</Badge>
+                                  <span className="text-muted-foreground/50">•</span>
+                                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">{service.format}</Badge>
+                                  {service.show_pricing && (
+                                    <>
+                                      <span className="text-muted-foreground/50">•</span>
+                                      <div className="flex items-center">
+                                        <DollarSign className="w-3 h-3 mr-1" />
+                                        {service.early_bird_price ? (
+                                          <div className="flex items-center space-x-1">
+                                            <span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.early_bird_price)}</span>
+                                            <span className="text-xs text-muted-foreground line-through">{PricingService.formatPrice(service.base_price)}</span>
+                                            <span className="text-green-600 text-xs font-medium">Early Bird</span>
+                                          </div>
+                                        ) : (
+                                          <span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.base_price)}</span>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Expandable Section and Actions */}
+                              {isExpanded && (
+                                <div className="px-4 pb-4 border-t border-border/50">
+                                  {/* Keep expanded details identical */}
+                                  {service.description && (
+                                    <div className="mb-4"><h4 className="text-sm font-semibold text-foreground mb-2">Description</h4><p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p></div>
+                                  )}
+                                  {hasAvailableSessions && (
+                                    <div className="mb-4">
+                                      <h4 className="text-sm font-semibold text-foreground mb-2">Available Sessions ({serviceSessions.length})</h4>
+                                      <div className="space-y-2">
+                                        {serviceSessions.map((sess) => (
+                                          <div key={sess.id} className="flex items-center justify-between text-sm bg-muted/20 rounded-lg p-3">
+                                            <div className="flex items-center space-x-2">
+                                              <Calendar className="w-4 h-4 text-accent" />
+                                              <div>
+                                                <div className="font-medium">{new Date(sess.date).toLocaleDateString()}</div>
+                                                <div className="text-xs text-muted-foreground">{sess.time}</div>
+                                                {sess.location && <div className="text-xs text-muted-foreground">{sess.location}</div>}
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className={`text-sm font-medium ${PricingService.getAvailabilityColor(sess.current_registrations, sess.max_capacity)}`}>{PricingService.getAvailabilityText(sess.current_registrations, sess.max_capacity)}</div>
+                                              <div className="text-xs text-muted-foreground">{sess.current_registrations}/{sess.max_capacity} registered</div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              <div className="px-4 pb-4">
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    variant={service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'professional' : 'outline'}
+                                    disabled={service.status !== 'active' || !service.allow_registration || !hasAvailableSessions}
+                                    onClick={() => handleRegisterClick(service)}
+                                    className="w-full"
+                                    size="sm"
+                                    aria-label={`Register for ${service.title} training`}
+                                  >
+                                    {service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'Register Now' : service.status === 'coming_soon' ? 'Coming Soon' : hasAvailableSessions ? 'Registration Closed' : 'No Sessions Available'}
+                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleCardExpansion(service.id)}
+                                    className="w-full text-xs text-muted-foreground hover:text-foreground"
+                                    aria-label={isExpanded ? `Collapse ${service.title} details` : `Expand ${service.title} details`}
+                                    aria-expanded={isExpanded}
+                                  >
+                                    {isExpanded ? (
+                                      <>
+                                        <ChevronUp className="w-4 h-4 mr-1" /> Show Less
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="w-4 h-4 mr-1" /> View Details
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg-white"
+                      aria-label="Scroll right"
+                      onClick={() => scrollRow(inPersonRef, 'right')}
+                    >
+                      <ChevronDown className="-rotate-90 w-4 h-4" />
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* Instructor-led Online */}
+              {formatGroups['Instructor-led Online'].length > 0 && (
+                <section aria-label="Instructor-led Online" className="relative">
+                  <div className="flex items-baseline justify-between mb-3">
+                    <h3 className="text-lg font-semibold">Instructor-led Online</h3>
+                    <span className="text-sm text-muted-foreground">{formatGroups['Instructor-led Online'].length} program{formatGroups['Instructor-led Online'].length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="relative">
+                    <button type="button" className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg-white" aria-label="Scroll left" onClick={() => scrollRow(onlineRef, 'left')}>
+                      <ChevronDown className="rotate-90 w-4 h-4" />
+                    </button>
+                    <div ref={onlineRef} role="list" aria-label="Online programs" className="overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-4">
+                      <div className="flex gap-4 pr-4 snap-x">
+                        {formatGroups['Instructor-led Online'].map((service) => {
+                          const IconComponent = getIconComponent(service.icon);
+                          const serviceSessions = getServiceSessions(service.id);
+                          const hasAvailableSessions = serviceSessions.length > 0;
+                          const isExpanded = expandedCards.has(service.id);
+                          return (
+                            <Card key={service.id} className={`relative min-w-[300px] max-w-[360px] snap-start overflow-hidden shadow-soft hover:shadow-strong transition-all duration-300 hover-lift ${service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'border-accent shadow-glow' : 'border-muted-foreground/20'}`} role="listitem" aria-labelledby={`service-title-${service.id}`}>
+                              {/* Same inner content as above */}
+                              <div className="p-4 pb-3">
+                                <div className="flex items-start space-x-2 mb-2">
+                                  <div className="w-6 h-6 bg-gradient-primary rounded-md flex items-center justify-center shadow-soft flex-shrink-0 mt-0.5">
+                                    <IconComponent className="w-3 h-3 text-white" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-1">
+                                      <h3 id={`service-title-${service.id}`} className="text-base font-semibold text-foreground leading-tight">{service.title}</h3>
+                                      <div className="flex-shrink-0 ml-2">
+                                        {service.status === 'active' && service.allow_registration && hasAvailableSessions ? (
+                                          <Badge className="bg-success text-success-foreground text-xs px-2 py-1"><CheckCircle className="w-3 h-3 mr-1" />Available</Badge>
+                                        ) : service.status === 'coming_soon' ? (
+                                          <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />Soon</Badge>
+                                        ) : service.status === 'active' && !hasAvailableSessions ? (
+                                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />No Sessions</Badge>
+                                        ) : (
+                                          <Badge variant="secondary" className="bg-muted text-muted-foreground text-xs px-2 py-1">Inactive</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <p className="text-muted-foreground text-sm leading-relaxed mb-3">{isExpanded ? service.description : `${service.description.substring(0, 150)}${service.description.length > 150 ? '...' : ''}`}</p>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                                  <div className="flex items-center"><Clock className="w-3 h-3 mr-1" />{service.duration}</div>
+                                  <span className="text-muted-foreground/50">•</span>
+                                  <Badge variant="secondary" className="text-xs px-1.5 py-0.5">{service.level}</Badge>
+                                  <span className="text-muted-foreground/50">•</span>
+                                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">{service.format}</Badge>
+                                  {service.show_pricing && (
+                                    <>
+                                      <span className="text-muted-foreground/50">•</span>
+                                      <div className="flex items-center"><DollarSign className="w-3 h-3 mr-1" />{service.early_bird_price ? (
+                                        <div className="flex items-center space-x-1"><span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.early_bird_price)}</span><span className="text-xs text-muted-foreground line-through">{PricingService.formatPrice(service.base_price)}</span><span className="text-green-600 text-xs font-medium">Early Bird</span></div>
+                                      ) : (
+                                        <span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.base_price)}</span>
+                                      )}</div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="px-4 pb-4"><div className="flex flex-col gap-2"><Button variant={service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'professional' : 'outline'} disabled={service.status !== 'active' || !service.allow_registration || !hasAvailableSessions} onClick={() => handleRegisterClick(service)} className="w-full" size="sm" aria-label={`Register for ${service.title} training`}>{service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'Register Now' : service.status === 'coming_soon' ? 'Coming Soon' : hasAvailableSessions ? 'Registration Closed' : 'No Sessions Available'}<ArrowRight className="w-4 h-4 ml-2" /></Button><Button variant="ghost" size="sm" onClick={() => toggleCardExpansion(service.id)} className="w-full text-xs text-muted-foreground hover:text-foreground" aria-label={isExpanded ? `Collapse ${service.title} details` : `Expand ${service.title} details`} aria-expanded={isExpanded}>{isExpanded ? (<><ChevronUp className="w-4 h-4 mr-1" /> Show Less</>) : (<><ChevronDown className="w-4 h-4 mr-1" /> View Details</>)}</Button></div></div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button type="button" className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg白" aria-label="Scroll right" onClick={() => scrollRow(onlineRef, 'right')}>
+                      <ChevronDown className="-rotate-90 w-4 h-4" />
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* Self-paced */}
+              {formatGroups['Self-paced'].length > 0 && (
+                <section aria-label="Self-paced" className="relative">
+                  <div className="flex items-baseline justify-between mb-3">
+                    <h3 className="text-lg font-semibold">Self-Paced</h3>
+                    <span className="text-sm text-muted-foreground">{formatGroups['Self-paced'].length} program{formatGroups['Self-paced'].length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="relative">
+                    <button type="button" className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg-white" aria-label="Scroll left" onClick={() => scrollRow(selfPacedRef, 'left')}>
+                      <ChevronDown className="rotate-90 w-4 h-4" />
+                    </button>
+                    <div ref={selfPacedRef} role="list" aria-label="Self-paced programs" className="overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-px-4">
+                      <div className="flex gap-4 pr-4 snap-x">
+                        {formatGroups['Self-paced'].map((service) => {
+                          const IconComponent = getIconComponent(service.icon);
+                          const serviceSessions = getServiceSessions(service.id);
+                          const hasAvailableSessions = serviceSessions.length > 0;
+                          const isExpanded = expandedCards.has(service.id);
+                          return (
+                            <Card key={service.id} className={`relative min-w-[300px] max-w-[360px] snap-start overflow-hidden shadow-soft hover:shadow-strong transition-all duration-300 hover-lift ${service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'border-accent shadow-glow' : 'border-muted-foreground/20'}`} role="listitem" aria-labelledby={`service-title-${service.id}`}>
+                              <div className="p-4 pb-3">
+                                <div className="flex items-start space-x-2 mb-2">
+                                  <div className="w-6 h-6 bg-gradient-primary rounded-md flex items-center justify-center shadow-soft flex-shrink-0 mt-0.5"><IconComponent className="w-3 h-3 text-white" /></div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-1">
+                                      <h3 id={`service-title-${service.id}`} className="text-base font-semibold text-foreground leading-tight">{service.title}</h3>
+                                      <div className="flex-shrink-0 ml-2">{service.status === 'active' && service.allow_registration && hasAvailableSessions ? (<Badge className="bg-success text-success-foreground text-xs px-2 py-1"><CheckCircle className="w-3 h-3 mr-1" />Available</Badge>) : service.status === 'coming_soon' ? (<Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />Soon</Badge>) : service.status === 'active' && !hasAvailableSessions ? (<Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs px-2 py-1"><Clock className="w-3 h-3 mr-1" />No Sessions</Badge>) : (<Badge variant="secondary" className="bg-muted text-muted-foreground text-xs px-2 py-1">Inactive</Badge>)}</div>
+                                    </div>
+                                    <p className="text-muted-foreground text-sm leading-relaxed mb-3">{isExpanded ? service.description : `${service.description.substring(0, 150)}${service.description.length > 150 ? '...' : ''}`}</p>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"><div className="flex items-center"><Clock className="w-3 h-3 mr-1" />{service.duration}</div><span className="text-muted-foreground/50">•</span><Badge variant="secondary" className="text-xs px-1.5 py-0.5">{service.level}</Badge><span className="text-muted-foreground/50">•</span><Badge variant="outline" className="text-xs px-1.5 py-0.5">{service.format}</Badge>{service.show_pricing && (<><span className="text-muted-foreground/50">•</span><div className="flex items-center"><DollarSign className="w-3 h-3 mr-1" />{service.early_bird_price ? (<div className="flex items-center space-x-1"><span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.early_bird_price)}</span><span className="text-xs text-muted-foreground line-through">{PricingService.formatPrice(service.base_price)}</span><span className="text-green-600 text-xs font-medium">Early Bird</span></div>) : (<span className="font-medium text-foreground text-xs">{PricingService.formatPrice(service.base_price)}</span>)}</div></>)}</div>
+                              </div>
+                              <div className="px-4 pb-4"><div className="flex flex-col gap-2"><Button variant={service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'professional' : 'outline'} disabled={service.status !== 'active' || !service.allow_registration || !hasAvailableSessions} onClick={() => handleRegisterClick(service)} className="w-full" size="sm" aria-label={`Register for ${service.title} training`}>{service.status === 'active' && service.allow_registration && hasAvailableSessions ? 'Register Now' : service.status === 'coming_soon' ? 'Coming Soon' : hasAvailableSessions ? 'Registration Closed' : 'No Sessions Available'}<ArrowRight className="w-4 h-4 ml-2" /></Button><Button variant="ghost" size="sm" onClick={() => toggleCardExpansion(service.id)} className="w-full text-xs text-muted-foreground hover:text-foreground" aria-label={isExpanded ? `Collapse ${service.title} details` : `Expand ${service.title} details`} aria-expanded={isExpanded}>{isExpanded ? (<><ChevronUp className="w-4 h-4 mr-1" /> Show Less</>) : (<><ChevronDown className="w-4 h-4 mr-1" /> View Details</>)}</Button></div></div>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button type="button" className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-9 w-9 items-center justify-center rounded-full bg-white/90 border border-border shadow-soft hover:bg-white" aria-label="Scroll right" onClick={() => scrollRow(selfPacedRef, 'right')}>
+                      <ChevronDown className="-rotate-90 w-4 h-4" />
+                    </button>
+                  </div>
+                </section>
+              )}
+            </div>
           )}
         </div>
       </section>
