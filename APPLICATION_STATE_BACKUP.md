@@ -30,6 +30,11 @@
 - ✅ Docker configurations
 - ✅ Deployment settings
 
+### 6. Container Images
+- ✅ Docker image versions
+- ✅ Container registry tags
+- ✅ Runtime configurations
+
 ## Backup Commands
 
 ### Code Backup
@@ -65,6 +70,18 @@ npx supabase functions list
 # Backup environment files (remove secrets)
 cp .env.production .env.production.backup.v1.0.0
 cp .env.development .env.development.backup.v1.0.0
+```
+
+### Container Backup
+```bash
+# Tag current container with version
+docker tag ghcr.io/jisujit/ai-focus:latest ghcr.io/jisujit/ai-focus:v1.0.0
+
+# Push versioned container
+docker push ghcr.io/jisujit/ai-focus:v1.0.0
+
+# Keep latest tag for current deployment
+docker push ghcr.io/jisujit/ai-focus:latest
 ```
 
 ## Restoration Process
