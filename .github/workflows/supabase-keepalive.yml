@@ -41,7 +41,7 @@ jobs:
         echo "Supabase URL: $SUPABASE_URL"
         
         # Create keepalive script
-        cat > keepalive.js << 'EOF'
+        cat > keepalive.cjs << 'EOF'
         const https = require('https');
         const http = require('http');
         
@@ -146,6 +146,10 @@ jobs:
             console.error(`[${new Date().toISOString()}] Fatal error:`, error);
             process.exit(1);
           });
+        EOF
+        
+        # Run the keepalive script
+        node keepalive.cjs
         
     - name: Send Success Notification
       if: success()

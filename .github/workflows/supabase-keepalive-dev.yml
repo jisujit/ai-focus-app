@@ -32,7 +32,7 @@ jobs:
           echo "Supabase URL: $SUPABASE_URL"
           
           # Create keepalive script
-          cat > keepalive-dev.js << 'EOF'
+          cat > keepalive-dev.cjs << 'EOF'
           const https = require('https');
           const http = require('http');
           
@@ -127,7 +127,7 @@ jobs:
           EOF
           
           # Run the keepalive script
-          node keepalive-dev.js
+          node keepalive-dev.cjs
         
       - name: Send Success Notification (Dev)
         if: success()
