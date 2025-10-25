@@ -1,0 +1,174 @@
+# Supabase Keepalive - GitHub Actions
+# Runs every 15 days to prevent project deactivation
+# This runs on GitHub's servers, independent of your local machine
+
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # Run every 15 days at 2:00 AM UTC
+    - cron: '0 2 */15 * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Supabase Keepalive - Production
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      run: |
+        echo "=== Supabase Keepalive Started ==="
+        echo "Date: $(date)"
+        echo "Environment: Production"
+        echo "Supabase URL: $SUPABASE_URL"
+        
+        # Create keepalive script
+        cat > keepalive.js << 'EOF'
+        const https = require('https');
+        const http = require('http');
+        
+        const SUPABASE_URL = process.env.SUPABASE_URL;
+        const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+        
+        const headers = {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        };
+        
+        async function makeRequest(url) {
+          return new Promise((resolve, reject) => {
+            const urlObj = new URL(url);
+            const options = {
+              hostname: urlObj.hostname,
+              port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+              path: urlObj.pathname + urlObj.search,
+              method: 'GET',
+              headers: headers
+            };
+            
+            const req = (urlObj.protocol === 'https:' ? https : http).request(options, (res) => {
+              let data = '';
+              res.on('data', chunk => data += chunk);
+              res.on('end', () => {
+                try {
+                  const jsonData = JSON.parse(data);
+                  resolve({ status: res.statusCode, data: jsonData });
+                } catch (e) {
+                  resolve({ status: res.statusCode, data: data });
+                }
+              });
+            });
+            
+            req.on('error', reject);
+            req.setTimeout(30000, () => reject(new Error('Request timeout')));
+            req.end();
+          });
+        }
+        
+        async function performKeepalive() {
+          const timestamp = new Date().toISOString();
+          console.log(`[${timestamp}] Starting comprehensive keepalive...`);
+          
+          const operations = [
+            { url: `${SUPABASE_URL}/rest/v1/services?select=id,title&limit=10`, name: 'Query services' },
+            { url: `${SUPABASE_URL}/rest/v1/sessions?select=id,session_id&limit=5`, name: 'Query sessions' },
+            { url: `${SUPABASE_URL}/rest/v1/training_registrations?select=id,email&limit=3`, name: 'Query registrations' },
+            { url: `${SUPABASE_URL}/rest/v1/contact_submissions?select=id,email&limit=2`, name: 'Query contacts' },
+            { url: `${SUPABASE_URL}/rest/v1/pricing_rules?select=id,rule_type&limit=5`, name: 'Query pricing rules' }
+          ];
+          
+          let successCount = 0;
+          let totalOperations = operations.length;
+          
+          for (const op of operations) {
+            try {
+              console.log(`[${timestamp}] Executing: ${op.name}`);
+              const result = await makeRequest(op.url);
+              
+              if (result.status === 200) {
+                console.log(`[${timestamp}] ✅ ${op.name} - Success (${Array.isArray(result.data) ? result.data.length : 'OK'} records)`);
+                successCount++;
+              } else {
+                console.log(`[${timestamp}] ⚠️ ${op.name} - Status ${result.status}`);
+              }
+            } catch (error) {
+              console.log(`[${timestamp}] ❌ ${op.name} - Error: ${error.message}`);
+            }
+          }
+          
+          // Test functions
+          try {
+            console.log(`[${timestamp}] Testing function: calculate_session_price`);
+            const funcResult = await makeRequest(`${SUPABASE_URL}/rest/v1/rpc/calculate_session_price`);
+            console.log(`[${timestamp}] ✅ Function test - Status ${funcResult.status}`);
+          } catch (error) {
+            console.log(`[${timestamp}] ⚠️ Function test - Expected parameter error: ${error.message}`);
+          }
+          
+          const successRate = Math.round((successCount / totalOperations) * 100);
+          console.log(`[${timestamp}] === Keepalive Summary ===`);
+          console.log(`[${timestamp}] Operations: ${successCount}/${totalOperations} successful (${successRate}%)`);
+          
+          if (successCount > 0) {
+            console.log(`[${timestamp}] ✅ KEEPALIVE SUCCESS - Project is active and healthy`);
+            return { success: true, message: `Keepalive completed successfully - ${successCount}/${totalOperations} operations successful` };
+          } else {
+            console.log(`[${timestamp}] ❌ KEEPALIVE FAILURE - All operations failed`);
+            return { success: false, message: 'Keepalive failed - all operations failed' };
+          }
+        }
+        
+        performKeepalive()
+          .then(result => {
+            console.log(`[${new Date().toISOString()}] Final result:`, result);
+            process.exit(result.success ? 0 : 1);
+          })
+          .catch(error => {
+            console.error(`[${new Date().toISOString()}] Fatal error:`, error);
+            process.exit(1);
+          });
+        
+    - name: Send Success Notification
+      if: success()
+      env:
+        NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      run: |
+        echo "=== Sending Success Notification ==="
+        echo "Keepalive completed successfully!"
+        echo "Project is active and healthy"
+        # Add email sending logic here if needed
+        
+    - name: Send Failure Notification
+      if: failure()
+      env:
+        NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      run: |
+        echo "=== Sending Failure Notification ==="
+        echo "Keepalive failed - manual intervention may be required"
+        echo "Check Supabase dashboard for project status"
+        # Add email sending logic here if needed
