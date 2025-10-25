@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install dependencies
         run: npm install
@@ -32,7 +32,7 @@ jobs:
           echo "Supabase URL: $SUPABASE_URL"
           
           # Create keepalive script
-          cat > keepalive-dev.cjs << 'EOF'
+          cat > keepalive-dev.js << 'EOF'
           const https = require('https');
           const http = require('http');
           
@@ -127,7 +127,7 @@ jobs:
           EOF
           
           # Run the keepalive script
-          node keepalive-dev.cjs
+          node keepalive-dev.js
         
       - name: Send Success Notification (Dev)
         if: success()
