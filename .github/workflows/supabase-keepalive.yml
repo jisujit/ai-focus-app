@@ -158,7 +158,7 @@ jobs:
         # Create email payload for Resend
         cat > email-success.json << EOF
         {
-          "from": "noreply@ai-focus.org",
+          "from": "AI Focus <noreply@mail.ai-focus.org>",
           "to": ["$NOTIFICATION_EMAIL"],
           "subject": "✅ Supabase Keepalive SUCCESS - $(date -u '+%Y-%m-%d %H:%M:%S UTC')",
           "html": "<h2>Supabase Keepalive Success</h2><p><strong>Status:</strong> ✅ SUCCESS</p><p><strong>Time:</strong> $(date -u '+%Y-%m-%d %H:%M:%S UTC')</p><p><strong>Project:</strong> ai-focus-app-prod</p><p><strong>Supabase URL:</strong> https://fvazftacytreklsmmbcr.supabase.co</p><p><strong>Message:</strong> Keepalive completed successfully - Project is active and healthy</p><h3>What this means:</h3><ul><li>✅ Your Supabase project is active</li><li>✅ Database operations completed successfully</li><li>✅ No action required</li><li>✅ Project protected from deactivation</li></ul><p><em>This is an automated notification from your Supabase Keepalive system.</em></p>"
@@ -184,7 +184,7 @@ jobs:
         # Create email payload for Resend
         cat > email-failure.json << EOF
         {
-          "from": "noreply@ai-focus.org",
+          "from": "AI Focus <noreply@mail.ai-focus.org>",
           "to": ["$NOTIFICATION_EMAIL"],
           "subject": "❌ Supabase Keepalive FAILURE - $(date -u '+%Y-%m-%d %H:%M:%S UTC')",
           "html": "<h2>Supabase Keepalive Failure</h2><p><strong>Status:</strong> ❌ FAILURE</p><p><strong>Time:</strong> $(date -u '+%Y-%m-%d %H:%M:%S UTC')</p><p><strong>Project:</strong> ai-focus-app-prod</p><p><strong>Supabase URL:</strong> https://fvazftacytreklsmmbcr.supabase.co</p><p><strong>Message:</strong> Keepalive failed - manual intervention may be required</p><h3>Immediate Actions Required:</h3><ul><li>❌ Check Supabase dashboard for project status</li><li>❌ Verify API keys and connectivity</li><li>❌ Review GitHub Actions logs for error details</li><li>❌ Consider manual intervention</li></ul><h3>Troubleshooting Steps:</h3><ol><li>Go to GitHub Actions dashboard</li><li>Check the failed workflow run</li><li>Review detailed logs</li><li>Verify Supabase project is active</li><li>Test API keys manually if needed</li></ol><p><em>This is an automated notification from your Supabase Keepalive system.</em></p>"
