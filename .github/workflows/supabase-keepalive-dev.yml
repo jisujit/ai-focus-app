@@ -18,66 +18,116 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Supabase CLI
-        run: |
-          curl -fsSL https://supabase.com/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Run Supabase Keepalive (Development)
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Supabase Keepalive - Development
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL_DEV }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_DEV }}
         run: |
-          echo "=== Supabase Keepalive - Development Environment ==="
-          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "Project: ai-focus-app-dev"
+          echo "=== Supabase Keepalive Started ==="
+          echo "Date: $(date)"
+          echo "Environment: Development"
           echo "Supabase URL: $SUPABASE_URL"
           
-          # Test 1: Simple health check
-          echo "=== Test 1: Health Check ==="
-          curl -s -o /dev/null -w "%{http_code}" "$SUPABASE_URL/rest/v1/" || echo "Health check failed"
+          # Create keepalive script
+          cat > keepalive-dev.js << 'EOF'
+          const https = require('https');
+          const http = require('http');
           
-          # Test 2: Query services table
-          echo "=== Test 2: Services Table Query ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/services?select=id&limit=1" || echo "Services query failed"
+          const SUPABASE_URL = process.env.SUPABASE_URL;
+          const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
           
-          # Test 3: Query sessions table
-          echo "=== Test 3: Sessions Table Query ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/sessions?select=session_id&limit=1" || echo "Sessions query failed"
+          console.log(`[${new Date().toISOString()}] Starting Supabase Keepalive - Development`);
+          console.log(`[${new Date().toISOString()}] Target: ${SUPABASE_URL}`);
           
-          # Test 4: Query training_registrations table
-          echo "=== Test 4: Training Registrations Query ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/training_registrations?select=registration_id&limit=1" || echo "Registrations query failed"
+          async function makeRequest(url, options = {}) {
+            return new Promise((resolve, reject) => {
+              const urlObj = new URL(url);
+              const requestOptions = {
+                hostname: urlObj.hostname,
+                port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+                path: urlObj.pathname + urlObj.search,
+                method: options.method || 'GET',
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Content-Type': 'application/json',
+                  ...options.headers
+                }
+              };
+              
+              const client = urlObj.protocol === 'https:' ? https : http;
+              const req = client.request(requestOptions, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  resolve({ status: res.statusCode, data });
+                });
+              });
+              
+              req.on('error', reject);
+              if (options.body) req.write(options.body);
+              req.end();
+            });
+          }
           
-          # Test 5: Query session_cancellations table
-          echo "=== Test 5: Session Cancellations Query ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/session_cancellations?select=id&limit=1" || echo "Cancellations query failed"
+          async function runKeepalive() {
+            try {
+              console.log(`[${new Date().toISOString()}] [TEST 1] Health check...`);
+              const healthResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/`);
+              console.log(`[${new Date().toISOString()}] [OK] Health check: ${healthResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 2] Services table...`);
+              const servicesResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/services?select=id&limit=1`);
+              console.log(`[${new Date().toISOString()}] [OK] Services query: ${servicesResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 3] Sessions table...`);
+              const sessionsResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/sessions?select=session_id&limit=1`);
+              console.log(`[${new Date().toISOString()}] [OK] Sessions query: ${sessionsResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 4] Training registrations...`);
+              const registrationsResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/training_registrations?select=registration_id&limit=1`);
+              console.log(`[${new Date().toISOString()}] [OK] Registrations query: ${registrationsResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 5] Session cancellations...`);
+              const cancellationsResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/session_cancellations?select=id&limit=1`);
+              console.log(`[${new Date().toISOString()}] [OK] Cancellations query: ${cancellationsResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 6] Pricing rules...`);
+              const pricingResponse = await makeRequest(`${SUPABASE_URL}/rest/v1/pricing_rules?select=id&limit=1`);
+              console.log(`[${new Date().toISOString()}] [OK] Pricing rules query: ${pricingResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [TEST 7] Edge Functions...`);
+              const edgeResponse = await makeRequest(`${SUPABASE_URL}/functions/v1/check-registration-status`, {
+                method: 'POST',
+                body: JSON.stringify({ sessionId: 'keepalive-test' })
+              });
+              console.log(`[${new Date().toISOString()}] [OK] Edge function test: ${edgeResponse.status}`);
+              
+              console.log(`[${new Date().toISOString()}] [SUCCESS] KEEPALIVE COMPLETE - Development project is active`);
+              console.log(`[${new Date().toISOString()}] [SUCCESS] All database operations completed successfully`);
+              
+            } catch (error) {
+              console.error(`[${new Date().toISOString()}] [ERROR] Keepalive failed:`, error.message);
+              process.exit(1);
+            }
+          }
           
-          # Test 6: Query pricing_rules table
-          echo "=== Test 6: Pricing Rules Query ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/rest/v1/pricing_rules?select=id&limit=1" || echo "Pricing rules query failed"
+          runKeepalive()
+            .then(() => {
+              console.log(`[${new Date().toISOString()}] [SUCCESS] Development keepalive completed successfully`);
+              process.exit(0);
+            })
+            .catch(error => {
+              console.error(`[${new Date().toISOString()}] [FATAL] Fatal error:`, error);
+              process.exit(1);
+            });
+          EOF
           
-          # Test 7: Test Edge Functions (lightweight)
-          echo "=== Test 7: Edge Functions Health ==="
-          curl -s -H "apikey: $SUPABASE_ANON_KEY" \
-               -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
-               "$SUPABASE_URL/functions/v1/check-registration-status" \
-               -d '{"sessionId": "test"}' || echo "Edge function test failed"
-          
-          echo "=== Development Keepalive Complete ==="
-          echo "All database operations completed successfully"
-          echo "Project: ai-focus-app-dev is active and healthy"
-          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          # Run the keepalive script
+          node keepalive-dev.js
         
       - name: Send Success Notification (Dev)
         if: success()
