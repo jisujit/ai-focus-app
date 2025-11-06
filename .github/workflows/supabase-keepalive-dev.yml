@@ -2,8 +2,8 @@ name: Supabase Keepalive (Development)
 
 on:
   schedule:
-    # Run every 15 days at 2:30 AM UTC (30 minutes after prod)
-    - cron: '30 2 */15 * *'
+    # Run every 5 days at 2:30 AM UTC (30 minutes after prod, runs on days 1, 6, 11, 16, 21, 26, 31 of each month)
+    - cron: '30 2 */5 * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:

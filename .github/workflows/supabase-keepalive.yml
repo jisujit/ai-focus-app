@@ -1,13 +1,13 @@
 # Supabase Keepalive - GitHub Actions
-# Runs every 15 days to prevent project deactivation
+# Runs every 5 days to prevent project deactivation
 # This runs on GitHub's servers, independent of your local machine
 
 name: Supabase Keepalive
 
 on:
   schedule:
-    # Run every 15 days at 2:00 AM UTC
-    - cron: '0 2 */15 * *'
+    # Run every 5 days at 2:00 AM UTC (runs on days 1, 6, 11, 16, 21, 26, 31 of each month)
+    - cron: '0 2 */5 * *'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
