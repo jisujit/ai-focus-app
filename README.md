@@ -83,3 +83,41 @@ You can connect a custom domain by:
 1. Purchasing a domain from a domain registrar
 2. Configuring DNS settings to point to your hosting provider
 3. Setting up SSL certificates (usually handled automatically by modern hosting providers)
+
+## 🚀 Development Workflow System
+
+This project includes a comprehensive development workflow system to help you manage your development sessions efficiently.
+
+### **Quick Start for Development:**
+```powershell
+./startup-dev-session.ps1
+```
+
+### **Session End:**
+```powershell
+./session-closeout.ps1 -SessionDescription "What you accomplished"
+```
+
+### **Key Documentation:**
+- **[DEVELOPMENT_WORKFLOW_README.md](DEVELOPMENT_WORKFLOW_README.md)** - Complete workflow guide
+- **[DEV_STARTUP_CHEATSHEET.md](DEV_STARTUP_CHEATSHEET.md)** - Quick reference guide
+- **[UTILITY_SCRIPTS_GLOSSARY.md](UTILITY_SCRIPTS_GLOSSARY.md)** - All utility scripts reference
+- **[ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)** - Environment management guide
+- **[KEEPALIVE_SYSTEM_GUIDE.md](KEEPALIVE_SYSTEM_GUIDE.md)** - Keepalive system documentation
+
+### **Essential Scripts:**
+- `startup-dev-session.ps1` - Complete development session startup
+- `session-closeout.ps1` - Proper session ending
+- `project-status.ps1` - Project status overview
+- `validate-env.ps1` - Environment validation
+- `switch-to-dev.ps1` / `switch-to-prod.ps1` - Environment switching
+
+### **Current Project Status:**
+- ✅ Security issues resolved (RLS, Function Security)
+- ✅ Keepalive system active (GitHub Actions)
+- ✅ Environment management working
+- ✅ Professional email notifications
+- ✅ WCAG 2.1 AA Accessibility compliance
+- ✅ **IDE Context System** - Complete context for any agentic system
+- ✅ **Session Continuity** - Never lose context between sessions
+- ✅ **Automated Documentation** - Session summaries and TODOs
